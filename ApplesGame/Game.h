@@ -1,6 +1,8 @@
 #pragma once
 #include "SFML/Graphics.hpp"
 #include "SFML/Audio.hpp"
+#include <string>
+#include <vector>
 #include "Constants.h"
 #include "Math.h"
 #include "Player.h"
@@ -15,6 +17,13 @@ namespace ApplesGame
 		Playing,
 		GameOver,
 		Win
+	};
+
+	struct LeaderboardEntry
+	{
+		std::string name;
+		int score = 0;
+		bool isPlayer = false;
 	};
 
 	struct Game
@@ -35,6 +44,9 @@ namespace ApplesGame
 		GameState state = GameState::MainMenu;
 		float timeSinceGameOver = 0.f;
 
+		// Leaderboard (persists across restarts, regenerated on full init)
+		std::vector<LeaderboardEntry> leaderboard;
+
 		// Visuals
 		sf::RectangleShape background;
 
@@ -50,6 +62,7 @@ namespace ApplesGame
 		sf::Text gameOverText;
 		sf::Text winText;
 		sf::Text menuText;
+		sf::Text leaderboardText;
 
 		// Sounds
 		sf::SoundBuffer eatSoundBuffer;
