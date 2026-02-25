@@ -7,11 +7,44 @@ build/
 .idea/
 
 # Compiled files
+# Prerequisites
+*.d
+
+# Compiled Object files
+*.slo
+*.lo
 *.o
 *.obj
-*.exe
-*.out
+
+# Precompiled Headers
+*.gch
+*.pch
+
+# Linker files
+*.ilk
+
+# Debugger Files
+*.pdb
+
+# Compiled Dynamic libraries
+*.so
+*.dylib
+*.dll
+
+# Fortran module files
+*.mod
+*.smod
+
+# Compiled Static libraries
+*.lai
+*.la
 *.a
 *.lib
-*.dll
-*.so
+
+# Executables
+*.exe
+*.out
+*.app
+
+# debug information files
+*.dwo
