@@ -48,6 +48,7 @@ int main()
 				window.close();
 				break;
 			}
+			HandleGameEvent(game, event);
 		}
 
 		UpdateGame(game, deltaTime);

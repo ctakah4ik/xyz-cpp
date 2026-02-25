@@ -9,11 +9,18 @@ namespace ApplesGame
 	const float INITIAL_SPEED = 100.f; // Pixels per second
 	const float PLAYER_SIZE = 20.f;
 	const float ACCELERATION = 20.f; // Pixels per second
-	const int NUM_APPLES = 20;
 	const float APPLE_SIZE = 20.f;
 	const float PAUSE_LENGTH = 3.f;
 	const int NUM_ROCKS = 10;
 	const float ROCK_SIZE = 15.f;
+
+	// Apple count range (random on each game)
+	const int MIN_APPLES = 10;
+	const int MAX_APPLES = 50;
+
+	// Game mode bitmask flags
+	const int GAME_MODE_INFINITE_APPLES  = 1 << 0; // apples respawn after being eaten
+	const int GAME_MODE_WITH_ACCELERATION = 1 << 1; // player speeds up after eating an apple
 
 	// Resource file names (relative to RESOURCES_PATH)
 	const std::string PLAYER_TEXTURE_FILE = "Player.png";
