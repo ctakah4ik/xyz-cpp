@@ -1,0 +1,17 @@
+# Build output
+cmake-build-debug/
+cmake-build-release/
+build/
+
+# IDE
+.idea/
+
+# Compiled files
+*.o
+*.obj
+*.exe
+*.out
+*.a
+*.lib
+*.dll
+*.so

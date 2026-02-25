@@ -1,0 +1,2 @@
+C:\dude\xyz\xyz-cpp-course-lesson-1-4-4\xyz-cpp-course-lesson-1-4-4\ApplesGame\x64\Debug\ApplesGame.exe
+C:\dude\repos\xyz-cpp\ApplesGame\x64\Debug\ApplesGame.exe
