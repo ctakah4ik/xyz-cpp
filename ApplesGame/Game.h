@@ -3,9 +3,8 @@
 #include "SFML/Audio.hpp"
 #include <string>
 #include <vector>
-#include <unordered_map>
+#include "Leaderboard.h"
 #include "Constants.h"
-#include "Math.h"
 #include "Player.h"
 #include "Apple.h"
 #include "Rock.h"
@@ -20,12 +19,6 @@ namespace ApplesGame
 		PauseMenu,
 		GameOver,
 		Win
-	};
-
-	struct LeaderboardEntry
-	{
-		int score = 0;
-		bool isPlayer = false;
 	};
 
 	struct Game
