@@ -151,24 +151,22 @@ namespace ApplesGame
 		// Reset leaderboard to NPC-only data (player will be added at game end)
 		InitLeaderboard(game);
 
-		// Free previous apple allocation (safe if nullptr)
-		delete[] game.apples;
-
 		// Pick a random apple count each game
-		game.numApples = MIN_APPLES + rand() % (MAX_APPLES - MIN_APPLES + 1);
-		game.apples = new Apple[game.numApples];
+		int numApples = MIN_APPLES + rand() % (MAX_APPLES - MIN_APPLES + 1);
+		game.apples.resize(numApples);
+		game.rocks.resize(NUM_ROCKS);
 
 		InitPlayer(game.player, game);
 
-		for (int i = 0; i < game.numApples; ++i)
+		for (Apple& apple : game.apples)
 		{
-			InitApple(game.apples[i], game.appleTexture);
-			game.apples[i].isEaten = false;
+			InitApple(apple, game.appleTexture);
+			apple.isEaten = false;
 		}
 
-		for (int i = 0; i < NUM_ROCKS; ++i)
+		for (Rock& rock : game.rocks)
 		{
-			InitRock(game.rocks[i], game.rockTexture);
+			InitRock(rock, game.rockTexture);
 		}
 
 		game.score = 0;
@@ -272,9 +270,8 @@ namespace ApplesGame
 
 			// Apple collisions
 			int eatenCount = 0;
-			for (int i = 0; i < game.numApples; ++i)
+			for (Apple& apple : game.apples)
 			{
-				Apple& apple = game.apples[i];
 				if (apple.isEaten)
 				{
 					++eatenCount;
@@ -306,7 +303,7 @@ namespace ApplesGame
 			}
 
 			// Win condition: all finite apples eaten
-			if (!(game.gameMode & GAME_MODE_INFINITE_APPLES) && eatenCount >= game.numApples)
+			if (!(game.gameMode & GAME_MODE_INFINITE_APPLES) && eatenCount >= (int)game.apples.size())
 			{
 				FinalizeLeaderboard(game);
 				BuildLeaderboardText(game);
@@ -315,9 +312,8 @@ namespace ApplesGame
 			}
 
 			// Rock collisions
-			for (int i = 0; i < NUM_ROCKS; ++i)
+			for (Rock& rock : game.rocks)
 			{
-				Rock& rock = game.rocks[i];
 				if (rock.sprite.getGlobalBounds().intersects(game.player.sprite.getGlobalBounds()))
 				{
 					if (game.hitSound.getBuffer()) game.hitSound.play();
@@ -364,9 +360,8 @@ namespace ApplesGame
 		}
 
 		// Apples (skip eaten ones in finite mode)
-		for (int i = 0; i < game.numApples; ++i)
+		for (Apple& apple : game.apples)
 		{
-			Apple& apple = game.apples[i];
 			if (!apple.isEaten)
 			{
 				apple.sprite.setPosition(apple.position.x, apple.position.y);
@@ -375,9 +370,8 @@ namespace ApplesGame
 		}
 
 		// Rocks
-		for (int i = 0; i < NUM_ROCKS; ++i)
+		for (Rock& rock : game.rocks)
 		{
-			Rock& rock = game.rocks[i];
 			rock.sprite.setPosition(rock.position.x, rock.position.y);
 			window.draw(rock.sprite);
 		}
@@ -402,7 +396,5 @@ namespace ApplesGame
 
 	void DeinializeGame(Game& game)
 	{
-		delete[] game.apples;
-		game.apples = nullptr;
 	}
 }

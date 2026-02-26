@@ -30,11 +30,8 @@ namespace ApplesGame
 	{
 		Player player;
 
-		// Dynamic apple array
-		Apple* apples = nullptr;
-		int numApples = 0;
-
-		Rock rocks[NUM_ROCKS];
+		std::vector<Apple> apples;
+		std::vector<Rock> rocks;
 
 		// Game mode bitmask (combination of GAME_MODE_* flags)
 		int gameMode = GAME_MODE_INFINITE_APPLES | GAME_MODE_WITH_ACCELERATION;
