@@ -21,6 +21,8 @@ Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "BallsManager", "BallsManage
 EndProject
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "GuessingGame", "GuessingGame\GuessingGame.vcxproj", "{304D039D-2025-46F1-BA8B-07A0D1EE20E0}"
 EndProject
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "SnakeGame", "SnakeGame\SnakeGame.vcxproj", "{BFC3D6A1-8933-4622-BCE5-9E0D673083B9}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|x64 = Debug|x64
@@ -101,6 +103,14 @@ Global
 		{304D039D-2025-46F1-BA8B-07A0D1EE20E0}.Release|x64.Build.0 = Release|x64
 		{304D039D-2025-46F1-BA8B-07A0D1EE20E0}.Release|x86.ActiveCfg = Release|Win32
 		{304D039D-2025-46F1-BA8B-07A0D1EE20E0}.Release|x86.Build.0 = Release|Win32
+		{BFC3D6A1-8933-4622-BCE5-9E0D673083B9}.Debug|x64.ActiveCfg = Debug|x64
+		{BFC3D6A1-8933-4622-BCE5-9E0D673083B9}.Debug|x64.Build.0 = Debug|x64
+		{BFC3D6A1-8933-4622-BCE5-9E0D673083B9}.Debug|x86.ActiveCfg = Debug|Win32
+		{BFC3D6A1-8933-4622-BCE5-9E0D673083B9}.Debug|x86.Build.0 = Debug|Win32
+		{BFC3D6A1-8933-4622-BCE5-9E0D673083B9}.Release|x64.ActiveCfg = Release|x64
+		{BFC3D6A1-8933-4622-BCE5-9E0D673083B9}.Release|x64.Build.0 = Release|x64
+		{BFC3D6A1-8933-4622-BCE5-9E0D673083B9}.Release|x86.ActiveCfg = Release|Win32
+		{BFC3D6A1-8933-4622-BCE5-9E0D673083B9}.Release|x86.Build.0 = Release|Win32
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
