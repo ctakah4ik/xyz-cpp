@@ -16,7 +16,20 @@ namespace ApplesGame
 		text += "  [2]  Acceleration: ";
 		text += (game.gameMode & GAME_MODE_WITH_ACCELERATION) ? "On\n" : "Off\n";
 		text += "\n  [Enter]  Start game";
+		text += "\n  [L]      Leaderboard";
 		game.menuText.setString(text);
+	}
+
+	// Update visual highlight of pause menu items based on pauseSelectedItem
+	static void UpdatePauseMenuHighlight(Game& game)
+	{
+		auto applyStyle = [](sf::Text& text, bool selected)
+		{
+			text.setFillColor(selected ? sf::Color::White : sf::Color(120, 120, 120));
+			text.setOutlineThickness(selected ? 2.f : 0.f);
+		};
+		applyStyle(game.pauseResumeText, game.pauseSelectedItem == 0);
+		applyStyle(game.pauseExitText,   game.pauseSelectedItem == 1);
 	}
 
 	// Handle keyboard events
@@ -41,6 +54,57 @@ namespace ApplesGame
 			{
 				RestartGame(game);
 			}
+			else if (event.key.code == sf::Keyboard::L)
+			{
+				BuildLeaderboardText(game.leaderboard, game.leaderboardText);
+				game.state = GameState::Leaderboard;
+			}
+		}
+		else if (game.state == GameState::Leaderboard)
+		{
+			if (event.key.code == sf::Keyboard::BackSpace)
+			{
+				game.state = GameState::MainMenu;
+				UpdateMenuText(game);
+			}
+		}
+		else if (game.state == GameState::Playing)
+		{
+			if (event.key.code == sf::Keyboard::P)
+			{
+				game.pauseSelectedItem = 0;
+				UpdatePauseMenuHighlight(game);
+				game.state = GameState::PauseMenu;
+			}
+		}
+		else if (game.state == GameState::PauseMenu)
+		{
+			if (event.key.code == sf::Keyboard::Up)
+			{
+				game.pauseSelectedItem = 0;
+				UpdatePauseMenuHighlight(game);
+			}
+			else if (event.key.code == sf::Keyboard::Down)
+			{
+				game.pauseSelectedItem = 1;
+				UpdatePauseMenuHighlight(game);
+			}
+			else if (event.key.code == sf::Keyboard::Enter)
+			{
+				if (game.pauseSelectedItem == 0)
+				{
+					game.state = GameState::Playing;
+				}
+				else
+				{
+					game.state = GameState::MainMenu;
+					UpdateMenuText(game);
+				}
+			}
+			else if (event.key.code == sf::Keyboard::P)
+			{
+				game.state = GameState::Playing;
+			}
 		}
 		else if (game.state == GameState::GameOver || game.state == GameState::Win)
 		{
@@ -58,24 +122,22 @@ namespace ApplesGame
 		// Reset leaderboard to NPC-only data (player will be added at game end)
 		InitLeaderboard(game.leaderboard);
 
-		// Free previous apple allocation (safe if nullptr)
-		delete[] game.apples;
-
 		// Pick a random apple count each game
-		game.numApples = MIN_APPLES + rand() % (MAX_APPLES - MIN_APPLES + 1);
-		game.apples = new Apple[game.numApples];
+		int numApples = MIN_APPLES + rand() % (MAX_APPLES - MIN_APPLES + 1);
+		game.apples.resize(numApples);
+		game.rocks.resize(NUM_ROCKS);
 
 		InitPlayer(game.player, game);
 
-		for (int i = 0; i < game.numApples; ++i)
+		for (Apple& apple : game.apples)
 		{
-			InitApple(game.apples[i], game.appleTexture);
-			game.apples[i].isEaten = false;
+			InitApple(apple, game.appleTexture);
+			apple.isEaten = false;
 		}
 
-		for (int i = 0; i < NUM_ROCKS; ++i)
+		for (Rock& rock : game.rocks)
 		{
-			InitRock(game.rocks[i], game.rockTexture);
+			InitRock(rock, game.rockTexture);
 		}
 
 		game.score = 0;
@@ -151,6 +213,45 @@ namespace ApplesGame
 		game.leaderboardText.setFillColor(sf::Color::White);
 		game.leaderboardText.setPosition(SCREEN_WIDTH / 2.f - 160.f, 120.f);
 
+		// Leaderboard screen hint
+		game.leaderboardHintText.setFont(game.font);
+		game.leaderboardHintText.setCharacterSize(20);
+		game.leaderboardHintText.setFillColor(sf::Color(180, 180, 180));
+		game.leaderboardHintText.setString("Backspace -- return to menu");
+		{
+			auto b = game.leaderboardHintText.getLocalBounds();
+			game.leaderboardHintText.setOrigin(b.width / 2.f, b.height / 2.f);
+			game.leaderboardHintText.setPosition(SCREEN_WIDTH / 2.f, SCREEN_HEIGHT - 40.f);
+		}
+
+		// Pause overlay (semi-transparent dark fill over the game world)
+		game.pauseOverlay.setSize(sf::Vector2f(SCREEN_WIDTH, SCREEN_HEIGHT));
+		game.pauseOverlay.setFillColor(sf::Color(0, 0, 0, 150));
+		game.pauseOverlay.setPosition(0.f, 0.f);
+
+		// Pause menu items
+		game.pauseResumeText.setFont(game.font);
+		game.pauseResumeText.setCharacterSize(40);
+		game.pauseResumeText.setOutlineColor(sf::Color::Yellow);
+		game.pauseResumeText.setString("Resume");
+		{
+			auto b = game.pauseResumeText.getLocalBounds();
+			game.pauseResumeText.setOrigin(b.width / 2.f, b.height / 2.f);
+			game.pauseResumeText.setPosition(SCREEN_WIDTH / 2.f, SCREEN_HEIGHT / 2.f - 50.f);
+		}
+
+		game.pauseExitText.setFont(game.font);
+		game.pauseExitText.setCharacterSize(40);
+		game.pauseExitText.setOutlineColor(sf::Color::Yellow);
+		game.pauseExitText.setString("Exit to Menu");
+		{
+			auto b = game.pauseExitText.getLocalBounds();
+			game.pauseExitText.setOrigin(b.width / 2.f, b.height / 2.f);
+			game.pauseExitText.setPosition(SCREEN_WIDTH / 2.f, SCREEN_HEIGHT / 2.f + 50.f);
+		}
+
+		UpdatePauseMenuHighlight(game);
+
 		// Main-menu text
 		game.menuText.setFont(game.font);
 		game.menuText.setCharacterSize(28);
@@ -168,7 +269,9 @@ namespace ApplesGame
 
 	void UpdateGame(Game& game, float deltaTime)
 	{
-		if (game.state == GameState::MainMenu)
+		if (game.state == GameState::MainMenu
+			|| game.state == GameState::Leaderboard
+			|| game.state == GameState::PauseMenu)
 		{
 			return; // input handled via HandleGameEvent
 		}
@@ -179,9 +282,8 @@ namespace ApplesGame
 
 			// Apple collisions
 			int eatenCount = 0;
-			for (int i = 0; i < game.numApples; ++i)
+			for (Apple& apple : game.apples)
 			{
-				Apple& apple = game.apples[i];
 				if (apple.isEaten)
 				{
 					++eatenCount;
@@ -213,7 +315,7 @@ namespace ApplesGame
 			}
 
 			// Win condition: all finite apples eaten
-			if (!(game.gameMode & GAME_MODE_INFINITE_APPLES) && eatenCount >= game.numApples)
+			if (!(game.gameMode & GAME_MODE_INFINITE_APPLES) && eatenCount >= (int)game.apples.size())
 			{
 				FinalizeLeaderboard(game.leaderboard, game.score);
 				BuildLeaderboardText(game.leaderboard, game.leaderboardText);
@@ -222,9 +324,8 @@ namespace ApplesGame
 			}
 
 			// Rock collisions
-			for (int i = 0; i < NUM_ROCKS; ++i)
+			for (Rock& rock : game.rocks)
 			{
-				Rock& rock = game.rocks[i];
 				if (rock.sprite.getGlobalBounds().intersects(game.player.sprite.getGlobalBounds()))
 				{
 					if (game.hitSound.getBuffer()) game.hitSound.play();
@@ -270,10 +371,16 @@ namespace ApplesGame
 			return;
 		}
 
-		// Apples (skip eaten ones in finite mode)
-		for (int i = 0; i < game.numApples; ++i)
+		if (game.state == GameState::Leaderboard)
 		{
-			Apple& apple = game.apples[i];
+			window.draw(game.leaderboardText);
+			window.draw(game.leaderboardHintText);
+			return;
+		}
+
+		// Apples (skip eaten ones in finite mode)
+		for (Apple& apple : game.apples)
+		{
 			if (!apple.isEaten)
 			{
 				apple.sprite.setPosition(apple.position.x, apple.position.y);
@@ -282,9 +389,8 @@ namespace ApplesGame
 		}
 
 		// Rocks
-		for (int i = 0; i < NUM_ROCKS; ++i)
+		for (Rock& rock : game.rocks)
 		{
-			Rock& rock = game.rocks[i];
 			rock.sprite.setPosition(rock.position.x, rock.position.y);
 			window.draw(rock.sprite);
 		}
@@ -295,7 +401,13 @@ namespace ApplesGame
 		window.draw(game.scoreText);
 		window.draw(game.controlsText);
 
-		if (game.state == GameState::GameOver)
+		if (game.state == GameState::PauseMenu)
+		{
+			window.draw(game.pauseOverlay);
+			window.draw(game.pauseResumeText);
+			window.draw(game.pauseExitText);
+		}
+		else if (game.state == GameState::GameOver)
 		{
 			window.draw(game.gameOverText);
 			window.draw(game.leaderboardText);
@@ -309,7 +421,5 @@ namespace ApplesGame
 
 	void DeinializeGame(Game& game)
 	{
-		delete[] game.apples;
-		game.apples = nullptr;
 	}
 }
