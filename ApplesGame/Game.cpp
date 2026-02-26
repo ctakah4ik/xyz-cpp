@@ -56,7 +56,7 @@ namespace ApplesGame
 			}
 			else if (event.key.code == sf::Keyboard::L)
 			{
-				BuildLeaderboardText(game);
+				BuildLeaderboardText(game.leaderboard, game.leaderboardText);
 				game.state = GameState::Leaderboard;
 			}
 		}
