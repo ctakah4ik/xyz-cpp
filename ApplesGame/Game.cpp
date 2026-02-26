@@ -5,6 +5,8 @@
 
 namespace ApplesGame
 {
+	// Menu text
+
 	static void UpdateMenuText(Game& game)
 	{
 		std::string text = "APPLES GAME\n\n";
@@ -17,13 +19,13 @@ namespace ApplesGame
 		game.menuText.setString(text);
 	}
 
-	// Handle keyboard events while in the main menu
+	// Handle keyboard events
 	void HandleGameEvent(Game& game, const sf::Event& event)
 	{
-		if (game.state != GameState::MainMenu)
+		if (event.type != sf::Event::KeyPressed)
 			return;
 
-		if (event.type == sf::Event::KeyPressed)
+		if (game.state == GameState::MainMenu)
 		{
 			if (event.key.code == sf::Keyboard::Num1)
 			{
@@ -40,10 +42,22 @@ namespace ApplesGame
 				RestartGame(game);
 			}
 		}
+		else if (game.state == GameState::GameOver || game.state == GameState::Win)
+		{
+			// Skip the timer — go straight to the menu
+			if (event.key.code == sf::Keyboard::Enter || event.key.code == sf::Keyboard::Space)
+			{
+				game.state = GameState::MainMenu;
+				UpdateMenuText(game);
+			}
+		}
 	}
 
 	void RestartGame(Game& game)
 	{
+		// Reset leaderboard to NPC-only data (player will be added at game end)
+		InitLeaderboard(game.leaderboard);
+
 		// Free previous apple allocation (safe if nullptr)
 		delete[] game.apples;
 
@@ -109,7 +123,7 @@ namespace ApplesGame
 		game.controlsText.setString("Controls: WASD or arrows to move. Esc to quit.");
 		game.controlsText.setPosition(10.f, 40.f);
 
-		// Game-over overlay
+		// Game-over overlay (positioned at top so leaderboard fits below)
 		game.gameOverText.setFont(game.font);
 		game.gameOverText.setCharacterSize(72);
 		game.gameOverText.setFillColor(sf::Color::Red);
@@ -117,7 +131,7 @@ namespace ApplesGame
 		{
 			auto b = game.gameOverText.getLocalBounds();
 			game.gameOverText.setOrigin(b.width / 2.f, b.height / 2.f);
-			game.gameOverText.setPosition(SCREEN_WIDTH / 2.f, SCREEN_HEIGHT / 2.f);
+			game.gameOverText.setPosition(SCREEN_WIDTH / 2.f, 65.f);
 		}
 
 		// Win overlay
@@ -128,14 +142,24 @@ namespace ApplesGame
 		{
 			auto b = game.winText.getLocalBounds();
 			game.winText.setOrigin(b.width / 2.f, b.height / 2.f);
-			game.winText.setPosition(SCREEN_WIDTH / 2.f, SCREEN_HEIGHT / 2.f);
+			game.winText.setPosition(SCREEN_WIDTH / 2.f, 65.f);
 		}
+
+		// Leaderboard text
+		game.leaderboardText.setFont(game.font);
+		game.leaderboardText.setCharacterSize(22);
+		game.leaderboardText.setFillColor(sf::Color::White);
+		game.leaderboardText.setPosition(SCREEN_WIDTH / 2.f - 160.f, 120.f);
 
 		// Main-menu text
 		game.menuText.setFont(game.font);
 		game.menuText.setCharacterSize(28);
 		game.menuText.setFillColor(sf::Color::White);
 		game.menuText.setPosition(SCREEN_WIDTH / 4.f, SCREEN_HEIGHT / 5.f);
+
+		// Fill leaderboard with predefined NPC data
+		InitLeaderboard(game.leaderboard);
+		BuildLeaderboardText(game.leaderboard, game.leaderboardText);
 
 		// Start at main menu
 		game.state = GameState::MainMenu;
@@ -191,6 +215,8 @@ namespace ApplesGame
 			// Win condition: all finite apples eaten
 			if (!(game.gameMode & GAME_MODE_INFINITE_APPLES) && eatenCount >= game.numApples)
 			{
+				FinalizeLeaderboard(game.leaderboard, game.score);
+				BuildLeaderboardText(game.leaderboard, game.leaderboardText);
 				game.state = GameState::Win;
 				game.timeSinceGameOver = 0.f;
 			}
@@ -202,6 +228,8 @@ namespace ApplesGame
 				if (rock.sprite.getGlobalBounds().intersects(game.player.sprite.getGlobalBounds()))
 				{
 					if (game.hitSound.getBuffer()) game.hitSound.play();
+					FinalizeLeaderboard(game.leaderboard, game.score);
+					BuildLeaderboardText(game.leaderboard, game.leaderboardText);
 					game.state = GameState::GameOver;
 					game.timeSinceGameOver = 0.f;
 					break;
@@ -212,6 +240,8 @@ namespace ApplesGame
 			if (IsPlayerCollidesWithScreenBorder(game.player))
 			{
 				if (game.hitSound.getBuffer()) game.hitSound.play();
+				FinalizeLeaderboard(game.leaderboard, game.score);
+				BuildLeaderboardText(game.leaderboard, game.leaderboardText);
 				game.state = GameState::GameOver;
 				game.timeSinceGameOver = 0.f;
 			}
@@ -266,9 +296,15 @@ namespace ApplesGame
 		window.draw(game.controlsText);
 
 		if (game.state == GameState::GameOver)
+		{
 			window.draw(game.gameOverText);
+			window.draw(game.leaderboardText);
+		}
 		else if (game.state == GameState::Win)
+		{
 			window.draw(game.winText);
+			window.draw(game.leaderboardText);
+		}
 	}
 
 	void DeinializeGame(Game& game)
