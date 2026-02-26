@@ -71,3 +71,6 @@ Desktop.ini
 *.map
 *.aps
 *.ncb
+*.tlog
+*.tlog.*
+x64/
