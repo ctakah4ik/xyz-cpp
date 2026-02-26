@@ -3,6 +3,7 @@
 #include "SFML/Audio.hpp"
 #include <string>
 #include <vector>
+#include "Leaderboard.h"
 #include "Constants.h"
 #include "Math.h"
 #include "Player.h"
@@ -17,13 +18,6 @@ namespace ApplesGame
 		Playing,
 		GameOver,
 		Win
-	};
-
-	struct LeaderboardEntry
-	{
-		std::string name;
-		int score = 0;
-		bool isPlayer = false;
 	};
 
 	struct Game

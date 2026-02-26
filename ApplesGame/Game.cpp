@@ -5,99 +5,6 @@
 
 namespace ApplesGame
 {
-	// Leaderboard helpers
-
-	// Predefined NPC records
-	static const LeaderboardEntry NPC_RECORDS[] = {
-		{"Alice",  120, false},
-		{"Bob",     95, false},
-		{"Carol",   72, false},
-		{"Dave",    58, false},
-		{"Eve",     43, false},
-		{"Frank",   31, false},
-		{"Grace",   18, false},
-	};
-	static const int NPC_COUNT = 7;
-
-	// Fill leaderboard with fixed NPC data (no player yet)
-	static void InitLeaderboard(Game& game)
-	{
-		game.leaderboard.clear();
-		for (int i = 0; i < NPC_COUNT; ++i)
-			game.leaderboard.push_back(NPC_RECORDS[i]);
-	}
-
-	// Insertion sort descending by score
-	static void SortLeaderboard(std::vector<LeaderboardEntry>& lb)
-	{
-		for (int i = 1; i < (int)lb.size(); ++i)
-		{
-			LeaderboardEntry key = lb[i];
-			int j = i - 1;
-			while (j >= 0 && lb[j].score < key.score)
-			{
-				lb[j + 1] = lb[j];
-				--j;
-			}
-			lb[j + 1] = key;
-		}
-	}
-
-	// Add player with current score to the leaderboard, then sort
-	static void FinalizeLeaderboard(Game& game)
-	{
-		LeaderboardEntry player;
-		player.name     = "Player";
-		player.score    = game.score;
-		player.isPlayer = true;
-		game.leaderboard.push_back(player);
-
-		SortLeaderboard(game.leaderboard);
-	}
-
-	// Pad string on the right to a fixed width
-	static std::string PadRight(const std::string& s, int width, char fill = ' ')
-	{
-		std::string r = s;
-		while ((int)r.size() < width) r += fill;
-		return r;
-	}
-
-	// Pad string on the left to a fixed width
-	static std::string PadLeft(const std::string& s, int width, char fill = ' ')
-	{
-		std::string r = s;
-		while ((int)r.size() < width) r = fill + r;
-		return r;
-	}
-
-	// Rebuild the leaderboard from current data
-	static void BuildLeaderboardText(Game& game)
-	{
-		const int NAME_WIDTH  = 12;
-		const int SCORE_WIDTH = 4;
-
-		std::string text = "===== LEADERBOARD =====\n";
-		for (int i = 0; i < (int)game.leaderboard.size(); ++i)
-		{
-			const LeaderboardEntry& e = game.leaderboard[i];
-			std::string name = e.name;
-			if ((int)name.size() > NAME_WIDTH) name = name.substr(0, NAME_WIDTH);
-
-			std::string rank      = PadRight(std::to_string(i + 1) + ".", 3);
-			std::string nameField = PadRight(name, NAME_WIDTH, '.');
-			std::string scoreStr  = PadLeft(std::to_string(e.score), SCORE_WIDTH);
-
-			std::string line = rank + " " + nameField + " " + scoreStr;
-			if (e.isPlayer) line = "> " + line + " <";
-			else            line = "  " + line;
-
-			text += line + "\n";
-		}
-		text += "=======================";
-		game.leaderboardText.setString(text);
-	}
-
 	// Menu text
 
 	static void UpdateMenuText(Game& game)
@@ -149,7 +56,7 @@ namespace ApplesGame
 	void RestartGame(Game& game)
 	{
 		// Reset leaderboard to NPC-only data (player will be added at game end)
-		InitLeaderboard(game);
+		InitLeaderboard(game.leaderboard);
 
 		// Free previous apple allocation (safe if nullptr)
 		delete[] game.apples;
@@ -251,8 +158,8 @@ namespace ApplesGame
 		game.menuText.setPosition(SCREEN_WIDTH / 4.f, SCREEN_HEIGHT / 5.f);
 
 		// Fill leaderboard with predefined NPC data
-		InitLeaderboard(game);
-		BuildLeaderboardText(game);
+		InitLeaderboard(game.leaderboard);
+		BuildLeaderboardText(game.leaderboard, game.leaderboardText);
 
 		// Start at main menu
 		game.state = GameState::MainMenu;
@@ -308,8 +215,8 @@ namespace ApplesGame
 			// Win condition: all finite apples eaten
 			if (!(game.gameMode & GAME_MODE_INFINITE_APPLES) && eatenCount >= game.numApples)
 			{
-				FinalizeLeaderboard(game);
-				BuildLeaderboardText(game);
+				FinalizeLeaderboard(game.leaderboard, game.score);
+				BuildLeaderboardText(game.leaderboard, game.leaderboardText);
 				game.state = GameState::Win;
 				game.timeSinceGameOver = 0.f;
 			}
@@ -321,8 +228,8 @@ namespace ApplesGame
 				if (rock.sprite.getGlobalBounds().intersects(game.player.sprite.getGlobalBounds()))
 				{
 					if (game.hitSound.getBuffer()) game.hitSound.play();
-					FinalizeLeaderboard(game);
-					BuildLeaderboardText(game);
+					FinalizeLeaderboard(game.leaderboard, game.score);
+					BuildLeaderboardText(game.leaderboard, game.leaderboardText);
 					game.state = GameState::GameOver;
 					game.timeSinceGameOver = 0.f;
 					break;
@@ -333,8 +240,8 @@ namespace ApplesGame
 			if (IsPlayerCollidesWithScreenBorder(game.player))
 			{
 				if (game.hitSound.getBuffer()) game.hitSound.play();
-				FinalizeLeaderboard(game);
-				BuildLeaderboardText(game);
+				FinalizeLeaderboard(game.leaderboard, game.score);
+				BuildLeaderboardText(game.leaderboard, game.leaderboardText);
 				game.state = GameState::GameOver;
 				game.timeSinceGameOver = 0.f;
 			}
