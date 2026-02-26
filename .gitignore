@@ -63,3 +63,11 @@ Desktop.ini
 
 # Crash dumps
 *.dmp
+
+# C++
+*.lib
+*.exp
+*.ilk
+*.map
+*.aps
+*.ncb
