@@ -3,6 +3,7 @@
 #include "SFML/Audio.hpp"
 #include <string>
 #include <vector>
+#include <unordered_map>
 #include "Constants.h"
 #include "Math.h"
 #include "Player.h"
@@ -14,14 +15,15 @@ namespace ApplesGame
 	enum class GameState
 	{
 		MainMenu,
+		Leaderboard,
 		Playing,
+		PauseMenu,
 		GameOver,
 		Win
 	};
 
 	struct LeaderboardEntry
 	{
-		std::string name;
 		int score = 0;
 		bool isPlayer = false;
 	};
@@ -40,12 +42,14 @@ namespace ApplesGame
 		int score = 0;
 		GameState state = GameState::MainMenu;
 		float timeSinceGameOver = 0.f;
+		int pauseSelectedItem = 0; // 0 = Resume, 1 = Exit to menu
 
-		// Leaderboard (persists across restarts, regenerated on full init)
-		std::vector<LeaderboardEntry> leaderboard;
+		// Leaderboard: key = name, value = score + player flag
+		std::unordered_map<std::string, LeaderboardEntry> leaderboard;
 
 		// Visuals
 		sf::RectangleShape background;
+		sf::RectangleShape pauseOverlay;
 
 		// Resources
 		sf::Texture playerTexture;
@@ -60,6 +64,9 @@ namespace ApplesGame
 		sf::Text winText;
 		sf::Text menuText;
 		sf::Text leaderboardText;
+		sf::Text leaderboardHintText;
+		sf::Text pauseResumeText;
+		sf::Text pauseExitText;
 
 		// Sounds
 		sf::SoundBuffer eatSoundBuffer;

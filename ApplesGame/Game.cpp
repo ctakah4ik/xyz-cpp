@@ -7,15 +7,15 @@ namespace ApplesGame
 {
 	// Leaderboard helpers
 
-	// Predefined NPC records
-	static const LeaderboardEntry NPC_RECORDS[] = {
-		{"Alice",  120, false},
-		{"Bob",     95, false},
-		{"Carol",   72, false},
-		{"Dave",    58, false},
-		{"Eve",     43, false},
-		{"Frank",   31, false},
-		{"Grace",   18, false},
+	// Predefined NPC records: {name, score}
+	static const std::pair<const char*, int> NPC_RECORDS[] = {
+		{"Alice",  120},
+		{"Bob",     95},
+		{"Carol",   72},
+		{"Dave",    58},
+		{"Eve",     43},
+		{"Frank",   31},
+		{"Grace",   18},
 	};
 	static const int NPC_COUNT = 7;
 
@@ -24,35 +24,30 @@ namespace ApplesGame
 	{
 		game.leaderboard.clear();
 		for (int i = 0; i < NPC_COUNT; ++i)
-			game.leaderboard.push_back(NPC_RECORDS[i]);
+			game.leaderboard[NPC_RECORDS[i].first] = {NPC_RECORDS[i].second, false};
 	}
 
 	// Insertion sort descending by score
-	static void SortLeaderboard(std::vector<LeaderboardEntry>& lb)
+	using LeaderboardRow = std::pair<std::string, LeaderboardEntry>;
+	static void SortLeaderboard(std::vector<LeaderboardRow>& rows)
 	{
-		for (int i = 1; i < (int)lb.size(); ++i)
+		for (int i = 1; i < (int)rows.size(); ++i)
 		{
-			LeaderboardEntry key = lb[i];
+			LeaderboardRow key = rows[i];
 			int j = i - 1;
-			while (j >= 0 && lb[j].score < key.score)
+			while (j >= 0 && rows[j].second.score < key.second.score)
 			{
-				lb[j + 1] = lb[j];
+				rows[j + 1] = rows[j];
 				--j;
 			}
-			lb[j + 1] = key;
+			rows[j + 1] = key;
 		}
 	}
 
-	// Add player with current score to the leaderboard, then sort
+	// Add (or update) the player record in the leaderboard
 	static void FinalizeLeaderboard(Game& game)
 	{
-		LeaderboardEntry player;
-		player.name     = "Player";
-		player.score    = game.score;
-		player.isPlayer = true;
-		game.leaderboard.push_back(player);
-
-		SortLeaderboard(game.leaderboard);
+		game.leaderboard["Player"] = {game.score, true};
 	}
 
 	// Pad string on the right to a fixed width
@@ -74,14 +69,18 @@ namespace ApplesGame
 	// Rebuild the leaderboard from current data
 	static void BuildLeaderboardText(Game& game)
 	{
+		// Extract map entries into a vector and sort by score
+		std::vector<LeaderboardRow> rows(game.leaderboard.begin(), game.leaderboard.end());
+		SortLeaderboard(rows);
+
 		const int NAME_WIDTH  = 12;
 		const int SCORE_WIDTH = 4;
 
 		std::string text = "===== LEADERBOARD =====\n";
-		for (int i = 0; i < (int)game.leaderboard.size(); ++i)
+		for (int i = 0; i < (int)rows.size(); ++i)
 		{
-			const LeaderboardEntry& e = game.leaderboard[i];
-			std::string name = e.name;
+			std::string name      = rows[i].first;
+			const LeaderboardEntry& e = rows[i].second;
 			if ((int)name.size() > NAME_WIDTH) name = name.substr(0, NAME_WIDTH);
 
 			std::string rank      = PadRight(std::to_string(i + 1) + ".", 3);
@@ -109,7 +108,20 @@ namespace ApplesGame
 		text += "  [2]  Acceleration: ";
 		text += (game.gameMode & GAME_MODE_WITH_ACCELERATION) ? "On\n" : "Off\n";
 		text += "\n  [Enter]  Start game";
+		text += "\n  [L]      Leaderboard";
 		game.menuText.setString(text);
+	}
+
+	// Update visual highlight of pause menu items based on pauseSelectedItem
+	static void UpdatePauseMenuHighlight(Game& game)
+	{
+		auto applyStyle = [](sf::Text& text, bool selected)
+		{
+			text.setFillColor(selected ? sf::Color::White : sf::Color(120, 120, 120));
+			text.setOutlineThickness(selected ? 2.f : 0.f);
+		};
+		applyStyle(game.pauseResumeText, game.pauseSelectedItem == 0);
+		applyStyle(game.pauseExitText,   game.pauseSelectedItem == 1);
 	}
 
 	// Handle keyboard events
@@ -133,6 +145,57 @@ namespace ApplesGame
 			else if (event.key.code == sf::Keyboard::Enter)
 			{
 				RestartGame(game);
+			}
+			else if (event.key.code == sf::Keyboard::L)
+			{
+				BuildLeaderboardText(game);
+				game.state = GameState::Leaderboard;
+			}
+		}
+		else if (game.state == GameState::Leaderboard)
+		{
+			if (event.key.code == sf::Keyboard::BackSpace)
+			{
+				game.state = GameState::MainMenu;
+				UpdateMenuText(game);
+			}
+		}
+		else if (game.state == GameState::Playing)
+		{
+			if (event.key.code == sf::Keyboard::P)
+			{
+				game.pauseSelectedItem = 0;
+				UpdatePauseMenuHighlight(game);
+				game.state = GameState::PauseMenu;
+			}
+		}
+		else if (game.state == GameState::PauseMenu)
+		{
+			if (event.key.code == sf::Keyboard::Up)
+			{
+				game.pauseSelectedItem = 0;
+				UpdatePauseMenuHighlight(game);
+			}
+			else if (event.key.code == sf::Keyboard::Down)
+			{
+				game.pauseSelectedItem = 1;
+				UpdatePauseMenuHighlight(game);
+			}
+			else if (event.key.code == sf::Keyboard::Enter)
+			{
+				if (game.pauseSelectedItem == 0)
+				{
+					game.state = GameState::Playing;
+				}
+				else
+				{
+					game.state = GameState::MainMenu;
+					UpdateMenuText(game);
+				}
+			}
+			else if (event.key.code == sf::Keyboard::P)
+			{
+				game.state = GameState::Playing;
 			}
 		}
 		else if (game.state == GameState::GameOver || game.state == GameState::Win)
@@ -242,6 +305,45 @@ namespace ApplesGame
 		game.leaderboardText.setFillColor(sf::Color::White);
 		game.leaderboardText.setPosition(SCREEN_WIDTH / 2.f - 160.f, 120.f);
 
+		// Leaderboard screen hint
+		game.leaderboardHintText.setFont(game.font);
+		game.leaderboardHintText.setCharacterSize(20);
+		game.leaderboardHintText.setFillColor(sf::Color(180, 180, 180));
+		game.leaderboardHintText.setString("Backspace -- return to menu");
+		{
+			auto b = game.leaderboardHintText.getLocalBounds();
+			game.leaderboardHintText.setOrigin(b.width / 2.f, b.height / 2.f);
+			game.leaderboardHintText.setPosition(SCREEN_WIDTH / 2.f, SCREEN_HEIGHT - 40.f);
+		}
+
+		// Pause overlay (semi-transparent dark fill over the game world)
+		game.pauseOverlay.setSize(sf::Vector2f(SCREEN_WIDTH, SCREEN_HEIGHT));
+		game.pauseOverlay.setFillColor(sf::Color(0, 0, 0, 150));
+		game.pauseOverlay.setPosition(0.f, 0.f);
+
+		// Pause menu items
+		game.pauseResumeText.setFont(game.font);
+		game.pauseResumeText.setCharacterSize(40);
+		game.pauseResumeText.setOutlineColor(sf::Color::Yellow);
+		game.pauseResumeText.setString("Resume");
+		{
+			auto b = game.pauseResumeText.getLocalBounds();
+			game.pauseResumeText.setOrigin(b.width / 2.f, b.height / 2.f);
+			game.pauseResumeText.setPosition(SCREEN_WIDTH / 2.f, SCREEN_HEIGHT / 2.f - 50.f);
+		}
+
+		game.pauseExitText.setFont(game.font);
+		game.pauseExitText.setCharacterSize(40);
+		game.pauseExitText.setOutlineColor(sf::Color::Yellow);
+		game.pauseExitText.setString("Exit to Menu");
+		{
+			auto b = game.pauseExitText.getLocalBounds();
+			game.pauseExitText.setOrigin(b.width / 2.f, b.height / 2.f);
+			game.pauseExitText.setPosition(SCREEN_WIDTH / 2.f, SCREEN_HEIGHT / 2.f + 50.f);
+		}
+
+		UpdatePauseMenuHighlight(game);
+
 		// Main-menu text
 		game.menuText.setFont(game.font);
 		game.menuText.setCharacterSize(28);
@@ -259,7 +361,9 @@ namespace ApplesGame
 
 	void UpdateGame(Game& game, float deltaTime)
 	{
-		if (game.state == GameState::MainMenu)
+		if (game.state == GameState::MainMenu
+			|| game.state == GameState::Leaderboard
+			|| game.state == GameState::PauseMenu)
 		{
 			return; // input handled via HandleGameEvent
 		}
@@ -359,6 +463,13 @@ namespace ApplesGame
 			return;
 		}
 
+		if (game.state == GameState::Leaderboard)
+		{
+			window.draw(game.leaderboardText);
+			window.draw(game.leaderboardHintText);
+			return;
+		}
+
 		// Apples (skip eaten ones in finite mode)
 		for (Apple& apple : game.apples)
 		{
@@ -382,7 +493,13 @@ namespace ApplesGame
 		window.draw(game.scoreText);
 		window.draw(game.controlsText);
 
-		if (game.state == GameState::GameOver)
+		if (game.state == GameState::PauseMenu)
+		{
+			window.draw(game.pauseOverlay);
+			window.draw(game.pauseResumeText);
+			window.draw(game.pauseExitText);
+		}
+		else if (game.state == GameState::GameOver)
 		{
 			window.draw(game.gameOverText);
 			window.draw(game.leaderboardText);
