@@ -3,6 +3,8 @@
 
 #include <SFML/Graphics.hpp>
 #include <SFML/Audio.hpp>
+#define NOMINMAX
+#include <windows.h>
 #include "Constants.h"
 #include "Game.h"
 
@@ -45,8 +47,19 @@ int main()
 			}
 			if (event.type == sf::Event::KeyPressed && event.key.code == sf::Keyboard::Escape)
 			{
-				window.close();
-				break;
+				int result = MessageBoxA(
+					window.getSystemHandle(),
+					"Are you sure you want to quit?",
+					"Quit Game",
+					MB_YESNO | MB_ICONQUESTION
+				);
+				if (result == IDYES)
+				{
+					window.close();
+					break;
+				}
+				// Reset clock so the blocked time doesn't become a huge deltaTime
+				lastTime = gameClock.getElapsedTime().asSeconds();
 			}
 			HandleGameEvent(game, event);
 		}
