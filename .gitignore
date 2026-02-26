@@ -1,50 +1,65 @@
-# Build output
-cmake-build-debug/
-cmake-build-release/
-build/
+# Unreal Engine (generated / cache)
+Binaries/
+DerivedDataCache/
+Intermediate/
+Saved/
+Engine/
 
-# IDE
-.idea/
-
-# Compiled files
-# Prerequisites
-*.d
-
-# Compiled Object files
-*.slo
-*.lo
-*.o
-*.obj
-
-# Precompiled Headers
-*.gch
-*.pch
-
-# Linker files
-*.ilk
-
-# Debugger Files
+# UE build products / temp
+Build/
+*.tmp
+*.log
 *.pdb
+*.obj
+*.idb
+*.pch
+*.ipch
 
-# Compiled Dynamic libraries
-*.so
-*.dylib
-*.dll
+# IDE: Visual Studio
+.vs/
+*.sln
+*.suo
+*.user
+*.userosscache
+*.sdf
+*.opensdf
+*.VC.db
+*.VC.VC.opendb
+*.vcxproj
+*.vcxproj.filters
+*.vcxproj.user
+*.vcxproj.DotSettings.user
 
-# Fortran module files
-*.mod
-*.smod
+# Visual Studio build dirs (если вдруг появляются)
+x64/
+Win64/
+Debug*/
+Release*/
+Development*/
 
-# Compiled Static libraries
-*.lai
-*.la
-*.a
-*.lib
+# IDE: Rider / JetBrains
+.idea/
+*.sln.iml
+*.ipr
+*.iws
 
-# Executables
-*.exe
-*.out
-*.app
+# Rider plugin caches / workspace
+**/.Rider/
+**/.idea.Rider/
+**/.idea/
+*.DotSettings.user
 
-# debug information files
-*.dwo
+# Unreal / Rider / VS generated project files
+*.xcodeproj
+*.xcworkspace
+*.code-workspace
+compile_commands.json
+
+# OS junk
+.DS_Store
+Thumbs.db
+ehthumbs.db
+Desktop.ini
+
+# Crash dumps
+*.dmp
