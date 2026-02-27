@@ -50,7 +50,7 @@ namespace SnakeGame
 
 		// Name entry
 		std::string playerName;
-		bool nameEntryAsked = false; // are we asking Yes/No to save?
+		bool nameEntryAsked = false;
 		int nameEntryChoice = 1;     // 0 = Yes, 1 = No (default No)
 
 		// Leaderboard
@@ -59,7 +59,7 @@ namespace SnakeGame
 		// Resources
 		sf::Font font;
 
-		// Sounds (short one-shot effects)
+		// Sounds
 		sf::SoundBuffer buttonBuffer;
 		sf::Sound       buttonSound;
 		sf::SoundBuffer eatBuffer;
@@ -69,7 +69,7 @@ namespace SnakeGame
 		sf::SoundBuffer finishBuffer;
 		sf::Sound       finishSound;
 
-		// Background music (streams from file)
+		// Background music
 		sf::Music sessionMusic;
 
 		// Textures
@@ -87,8 +87,17 @@ namespace SnakeGame
 		sf::RectangleShape background;
 	};
 
+	// Public API
 	void InitGame(Game& game);
 	void HandleGameEvent(Game& game, const sf::Event& event);
 	void UpdateGame(Game& game, float deltaTime);
 	void DrawGame(Game& game, sf::RenderWindow& window);
+
+	// Shared helpers
+	void PlaySFX(const Game& game, sf::Sound& sound);
+	void StartMusic(Game& game);
+	void PauseMusic(Game& game);
+	void StopMusic(Game& game);
+	void StartSession(Game& game);
+	SnakeTextures BuildSnakeTextures(const Game& game);
 }
