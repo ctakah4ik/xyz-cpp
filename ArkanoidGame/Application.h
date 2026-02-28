@@ -2,8 +2,8 @@
 #include <SFML/Graphics.hpp>
 #include "Game.h"
 
-namespace SnakeGame {
-	
+namespace ArkanoidGame
+{
 	class Application
 	{
 	public:
@@ -13,10 +13,7 @@ namespace SnakeGame {
 		void Run();
 
 	private:
-		Game game;
-		sf::RenderWindow window;
+		Game game_;
+		sf::RenderWindow window_;
 	};
-
 }
-
-

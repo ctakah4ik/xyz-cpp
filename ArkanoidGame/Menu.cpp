@@ -1,121 +1,165 @@
 #include "Menu.h"
-#include <assert.h>
+#include <cassert>
+#include <algorithm>
 
-namespace SnakeGame
+namespace ArkanoidGame
 {
-	void InitMenuItem(MenuItem& item)
+	// --- MenuItem ---
+
+	MenuItem::MenuItem() {}
+
+	void MenuItem::setText(const std::string& str, const sf::Font& font, unsigned int charSize)
 	{
-		for (auto& child : item.children)
-		{
-			child->parent = &item;
-			InitMenuItem(*child);
-		}
+		text_.setString(str);
+		text_.setFont(font);
+		text_.setCharacterSize(charSize);
 	}
 
-	void SelectMenuItem(Menu& menu, MenuItem* item)
+	void MenuItem::setHintText(const std::string& str, const sf::Font& font, unsigned int charSize, sf::Color color)
 	{
-		// It is definitely error to select root item
-		assert(item != &menu.rootItem);
+		hintText_.setString(str);
+		hintText_.setFont(font);
+		hintText_.setCharacterSize(charSize);
+		hintText_.setFillColor(color);
+	}
 
-		if (menu.selectedItem == item)
-		{
+	void MenuItem::setChildrenLayout(Orientation orientation, Alignment alignment, float spacing)
+	{
+		childrenOrientation_ = orientation;
+		childrenAlignment_ = alignment;
+		childrenSpacing_ = spacing;
+	}
+
+	void MenuItem::setColors(sf::Color selected, sf::Color deselected)
+	{
+		selectedColor_ = selected;
+		deselectedColor_ = deselected;
+	}
+
+	void MenuItem::setEnabled(bool enabled) { isEnabled_ = enabled; }
+
+	void MenuItem::addChild(MenuItem* child) { children_.push_back(child); }
+
+	sf::Text& MenuItem::getText() { return text_; }
+	sf::Text& MenuItem::getHintText() { return hintText_; }
+	Orientation MenuItem::getChildrenOrientation() const { return childrenOrientation_; }
+	Alignment MenuItem::getChildrenAlignment() const { return childrenAlignment_; }
+	float MenuItem::getChildrenSpacing() const { return childrenSpacing_; }
+	bool MenuItem::isEnabled() const { return isEnabled_; }
+	const std::vector<MenuItem*>& MenuItem::getChildren() const { return children_; }
+	MenuItem* MenuItem::getParent() const { return parent_; }
+
+	// --- Menu ---
+
+	Menu::Menu() {}
+
+	void Menu::init()
+	{
+		initItem(rootItem_);
+	}
+
+	MenuItem& Menu::getRootItem() { return rootItem_; }
+	MenuItem* Menu::getSelectedItem() const { return selectedItem_; }
+
+	MenuItem* Menu::getCurrentContext() const
+	{
+		return selectedItem_ ? selectedItem_->parent_ : const_cast<MenuItem*>(&rootItem_);
+	}
+
+	void Menu::select(MenuItem* item)
+	{
+		assert(item != &rootItem_);
+
+		if (selectedItem_ == item)
 			return;
-		}
 
-		if (item && !item->isEnabled)
-		{
-			// Don't allow to select disabled item
+		if (item && !item->isEnabled_)
 			return;
-		}
 
-		if (menu.selectedItem)
-		{
-			menu.selectedItem->text.setFillColor(menu.selectedItem->deselectedColor);
-		}
+		if (selectedItem_)
+			selectedItem_->text_.setFillColor(selectedItem_->deselectedColor_);
 
-		menu.selectedItem = item;
+		selectedItem_ = item;
 
-		if (menu.selectedItem)
-		{
-			menu.selectedItem->text.setFillColor(menu.selectedItem->selectedColor);
-		}
+		if (selectedItem_)
+			selectedItem_->text_.setFillColor(selectedItem_->selectedColor_);
 	}
 
-	bool SelectPreviousMenuItem(Menu& menu)
+	bool Menu::selectPrevious()
 	{
-		if (menu.selectedItem)
+		if (!selectedItem_)
+			return false;
+
+		MenuItem* parent = selectedItem_->parent_;
+		assert(parent);
+
+		auto it = std::find(parent->children_.begin(), parent->children_.end(), selectedItem_);
+		if (it != parent->children_.begin())
 		{
-			MenuItem* parent = menu.selectedItem->parent;
-			assert(parent); // There always should be parent
-
-			auto it = std::find(parent->children.begin(), parent->children.end(), menu.selectedItem);
-			if (it != parent->children.begin())
-			{
-				SelectMenuItem(menu, *(--it));
-				return true;
-			}
-		}
-
-		return false;
-	}
-
-	bool SelectNextMenuItem(Menu& menu)
-	{
-		if (menu.selectedItem)
-		{
-			MenuItem* parent = menu.selectedItem->parent;
-			assert(parent); // There always should be parent
-			auto it = std::find(parent->children.begin(), parent->children.end(), menu.selectedItem);
-			if (it != parent->children.end() - 1)
-			{
-				SelectMenuItem(menu, *(++it));
-				return true;
-			}
-		}
-		return false;
-	}
-
-	bool ExpandSelectedItem(Menu& menu)
-	{
-		if (menu.selectedItem && menu.selectedItem->children.size() > 0)
-		{
-			SelectMenuItem(menu, menu.selectedItem->children.front());
+			select(*(--it));
 			return true;
 		}
-
 		return false;
 	}
 
-	bool CollapseSelectedItem(Menu& menu)
+	bool Menu::selectNext()
 	{
-		if (menu.selectedItem && menu.selectedItem->parent && menu.selectedItem->parent != &menu.rootItem)
+		if (!selectedItem_)
+			return false;
+
+		MenuItem* parent = selectedItem_->parent_;
+		assert(parent);
+
+		auto it = std::find(parent->children_.begin(), parent->children_.end(), selectedItem_);
+		if (it != parent->children_.end() - 1)
 		{
-			SelectMenuItem(menu, menu.selectedItem->parent);
+			select(*(++it));
 			return true;
 		}
 		return false;
 	}
 
-	MenuItem* GetCurrentMenuContext(Menu& menu)
+	bool Menu::expandSelected()
 	{
-		return menu.selectedItem ? menu.selectedItem->parent : &menu.rootItem;
+		if (selectedItem_ && selectedItem_->children_.size() > 0)
+		{
+			select(selectedItem_->children_.front());
+			return true;
+		}
+		return false;
 	}
 
-	void DrawMenu(Menu& menu, sf::RenderWindow& window, sf::Vector2f position, sf::Vector2f origin)
+	bool Menu::collapseSelected()
 	{
-		MenuItem* expandedItem = GetCurrentMenuContext(menu);
+		if (selectedItem_ && selectedItem_->parent_ && selectedItem_->parent_ != &rootItem_)
+		{
+			select(selectedItem_->parent_);
+			return true;
+		}
+		return false;
+	}
+
+	void Menu::draw(sf::RenderWindow& window, sf::Vector2f position, sf::Vector2f origin)
+	{
+		MenuItem* context = getCurrentContext();
 
 		std::vector<sf::Text*> texts;
-		texts.reserve(expandedItem->children.size());
-		for (auto& child : expandedItem->children)
+		texts.reserve(context->children_.size());
+		for (auto& child : context->children_)
 		{
-			if (child->isEnabled)
-			{
-				texts.push_back(&child->text);
-			}
+			if (child->isEnabled_)
+				texts.push_back(&child->text_);
 		}
 
-		DrawTextList(window, texts, expandedItem->childrenSpacing, expandedItem->childrenOrientation, expandedItem->childrenAlignment, position, origin);
+		DrawTextList(window, texts, context->childrenSpacing_, context->childrenOrientation_, context->childrenAlignment_, position, origin);
 	}
 
+	void Menu::initItem(MenuItem& item)
+	{
+		for (auto& child : item.children_)
+		{
+			child->parent_ = &item;
+			initItem(*child);
+		}
+	}
 }

@@ -1,26 +1,26 @@
 #pragma once
 #include <SFML/Graphics.hpp>
+#include "Game.h"
 #include "Menu.h"
 
-namespace SnakeGame
+namespace ArkanoidGame
 {
-	struct Game;
-
-	struct GameStatePauseMenuData
+	class GameStatePauseMenu : public IGameStateData
 	{
-		sf::Font font;
+	public:
+		void Init(Game& game) override;
+		void Shutdown(Game& game) override;
+		void HandleWindowEvent(Game& game, sf::Event& event) override;
+		void Update(Game& game, float timeDelta) override;
+		void Draw(Game& game, sf::RenderWindow& window) override;
 
-		sf::RectangleShape background;
-		sf::Text titleText;
+	private:
+		sf::Font font_;
+		sf::RectangleShape background_;
+		sf::Text titleText_;
 
-		Menu menu;
-		MenuItem resumeItem;
-		MenuItem exitItem;
+		Menu menu_;
+		MenuItem resumeItem_;
+		MenuItem exitItem_;
 	};
-
-	void InitGameStatePauseMenu(GameStatePauseMenuData& data, Game& game);
-	void ShutdownGameStatePauseMenu(GameStatePauseMenuData& data, Game& game);
-	void HandleGameStatePauseMenuWindowEvent(GameStatePauseMenuData& data, Game& game, const sf::Event& event);
-	void UpdateGameStatePauseMenu(GameStatePauseMenuData& data, Game& game, float timeDelta);
-	void DrawGameStatePauseMenu(GameStatePauseMenuData& data, Game& game, sf::RenderWindow& window);
 }

@@ -1,93 +1,87 @@
 #include "GameStateRecords.h"
 #include "Text.h"
-#include "Game.h"
-#include "GameSettings.h"
-#include <assert.h>
+#include <cassert>
 #include <sstream>
+#include <map>
 
-namespace SnakeGame
+namespace ArkanoidGame
 {
-	void InitGameStateRecords(GameStateRecordsData& data, Game& game)
+	void GameStateRecords::Init(Game& game)
 	{
-		assert(data.font.loadFromFile(RESOURCES_PATH + "Fonts/Roboto-Regular.ttf"));
+		assert(font_.loadFromFile(RESOURCES_PATH + "Fonts/Roboto-Regular.ttf"));
 
-		data.titleText.setString("RECORDS");
-		data.titleText.setFont(data.font);
-		data.titleText.setFillColor(sf::Color::Red);
-		data.titleText.setCharacterSize(48);
+		titleText_.setString("RECORDS");
+		titleText_.setFont(font_);
+		titleText_.setFillColor(sf::Color::Red);
+		titleText_.setCharacterSize(48);
 
-		data.tableTexts.reserve(MAX_RECORDS_TABLE_SIZE);
+		tableTexts_.reserve(MAX_RECORDS_TABLE_SIZE);
 
-		std::map<int, std::string> sortedRecordsTable;
-		for (const auto& item : game.recordsTable)
+		std::map<int, std::string> sortedRecords;
+		for (const auto& item : game.getRecordsTable())
 		{
-			sortedRecordsTable[item.second] = item.first;
+			sortedRecords[item.second] = item.first;
 		}
 
-		auto it = sortedRecordsTable.rbegin();
-		for (int i = 0; i < MAX_RECORDS_TABLE_SIZE && it != sortedRecordsTable.rend(); ++i, ++it) // Note, we can do several actions in for action block
+		auto it = sortedRecords.rbegin();
+		for (int i = 0; i < MAX_RECORDS_TABLE_SIZE && it != sortedRecords.rend(); ++i, ++it)
 		{
-			data.tableTexts.emplace_back(); // Create text in place
-			sf::Text& text = data.tableTexts.back();
+			tableTexts_.emplace_back();
+			sf::Text& text = tableTexts_.back();
 
-			// We can use streams for writing into string and reading from it
 			std::stringstream sstream;
 			sstream << i + 1 << ". " << it->second << ": " << it->first;
 			text.setString(sstream.str());
-			text.setFont(data.font);
+			text.setFont(font_);
 			text.setFillColor(sf::Color::White);
 			text.setCharacterSize(24);
 		}
 
-		data.hintText.setString("Press ESC to return back to main menu");
-		data.hintText.setFont(data.font);
-		data.hintText.setFillColor(sf::Color::White);
-		data.hintText.setCharacterSize(24);
+		hintText_.setString("Press ESC to return back to main menu");
+		hintText_.setFont(font_);
+		hintText_.setFillColor(sf::Color::White);
+		hintText_.setCharacterSize(24);
 	}
 
-	void ShutdownGameStateRecords(GameStateRecordsData& data, Game& game)
+	void GameStateRecords::Shutdown(Game& game)
 	{
-		// Nothing to clear here
 	}
 
-	void HandleGameStateRecordsWindowEvent(GameStateRecordsData& data, Game& game, const sf::Event& event)
+	void GameStateRecords::HandleWindowEvent(Game& game, sf::Event& event)
 	{
 		if (event.type == sf::Event::KeyPressed)
 		{
 			if (event.key.code == sf::Keyboard::Escape)
 			{
-				PopGameState(game);
+				game.popState();
 			}
 		}
 	}
 
-	void UpdateGameStateRecords(GameStateRecordsData& data, Game& game, float timeDelta)
+	void GameStateRecords::Update(Game& game, float timeDelta)
 	{
-
 	}
 
-	void DrawGameStateRecords(GameStateRecordsData& data, Game& game, sf::RenderWindow& window)
+	void GameStateRecords::Draw(Game& game, sf::RenderWindow& window)
 	{
 		sf::Vector2f viewSize = window.getView().getSize();
 
-		data.titleText.setOrigin(GetTextOrigin(data.titleText, { 0.5f, 0.f }));
-		data.titleText.setPosition(viewSize.x / 2.f, 50.f);
-		window.draw(data.titleText);
+		titleText_.setOrigin(GetTextOrigin(titleText_, { 0.5f, 0.f }));
+		titleText_.setPosition(viewSize.x / 2.f, 50.f);
+		window.draw(titleText_);
 
-		// We need to create new vector here as DrawItemsList needs vector of pointers
 		std::vector<sf::Text*> textsList;
-		textsList.reserve(data.tableTexts.size());
-		for (auto& text : data.tableTexts)
+		textsList.reserve(tableTexts_.size());
+		for (auto& text : tableTexts_)
 		{
 			textsList.push_back(&text);
 		}
 
-		sf::Vector2f tablePosition = { data.titleText.getGlobalBounds().left, viewSize.y / 2.f };
+		sf::Vector2f tablePosition = { titleText_.getGlobalBounds().left, viewSize.y / 2.f };
 		DrawTextList(window, textsList, 10.f, Orientation::Vertical, Alignment::Min, tablePosition, { 0.f, 0.f });
 
-		data.hintText.setOrigin(GetTextOrigin(data.hintText, { 0.5f, 1.f }));
-		data.hintText.setPosition(viewSize.x / 2.f, viewSize.y - 50.f);
-		window.draw(data.hintText);
+		hintText_.setOrigin(GetTextOrigin(hintText_, { 0.5f, 1.f }));
+		hintText_.setPosition(viewSize.x / 2.f, viewSize.y - 50.f);
+		window.draw(hintText_);
 	}
-
 }

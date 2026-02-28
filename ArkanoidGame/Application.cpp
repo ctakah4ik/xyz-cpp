@@ -1,63 +1,52 @@
 #include "Application.h"
 #include <cstdlib>
 
-namespace SnakeGame
+namespace ArkanoidGame
 {
-
 	Application::Application(const std::string& gameName) :
-		window(sf::VideoMode(SnakeGame::SCREEN_WIDTH, SnakeGame::SCREEN_HEGHT), "SnakeGame")
+		window_(sf::VideoMode(SCREEN_WIDTH, SCREEN_HEIGHT), gameName)
 	{
-		// Init random number generator
-		unsigned int seed = (unsigned int)time(nullptr); // Get current time as seed. You can also use any other number to fix randomization
+		unsigned int seed = (unsigned int)time(nullptr);
 		srand(seed);
 
-		InitGame(game);
+		game_.init();
 	}
 
 	Application::~Application()
 	{
-		ShutdownGame(game);
+		game_.shutdown();
 	}
 
 	void Application::Run()
 	{
-		// Init game clock
 		sf::Clock gameClock;
 
-		// Game loop
-		while (window.isOpen()) {
-
+		while (window_.isOpen())
+		{
 			float startTime = gameClock.getElapsedTime().asSeconds();
 
-			HandleWindowEvents(game, window);
+			game_.handleWindowEvents(window_);
 
-			if (!window.isOpen()) {
+			if (!window_.isOpen())
 				break;
-			}
 
-			if (UpdateGame(game, TIME_PER_FRAME))
+			if (game_.update(TIME_PER_FRAME))
 			{
-				// Draw everything here
-				// Clear the window first
-				window.clear();
-
-				DrawGame(game, window);
-
-				// End the current frame, display window contents on screen
-				window.display();
+				window_.clear();
+				game_.draw(window_);
+				window_.display();
 			}
 			else
 			{
-				window.close();
+				window_.close();
 			}
 
 			float endTime = gameClock.getElapsedTime().asSeconds();
 			float deltaTime = endTime - startTime;
-			if (deltaTime < TIME_PER_FRAME) {
-				// Reduce framerate to not spam CPU and GPU
+			if (deltaTime < TIME_PER_FRAME)
+			{
 				sf::sleep(sf::seconds(TIME_PER_FRAME - deltaTime));
 			}
 		}
 	}
-
 }

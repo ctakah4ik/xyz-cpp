@@ -1,97 +1,84 @@
 #include "GameStatePauseMenu.h"
-#include "Game.h"
-#include <assert.h>
+#include <cassert>
 
-namespace SnakeGame
+namespace ArkanoidGame
 {
-	void InitGameStatePauseMenu(GameStatePauseMenuData& data, Game& game)
+	void GameStatePauseMenu::Init(Game& game)
 	{
-		assert(data.font.loadFromFile(RESOURCES_PATH + "Fonts/Roboto-Regular.ttf"));
+		assert(font_.loadFromFile(RESOURCES_PATH + "Fonts/Roboto-Regular.ttf"));
 
-		data.background.setFillColor(sf::Color(0, 0, 0, 128)); // Semi-transparent black
+		background_.setFillColor(sf::Color(0, 0, 0, 128));
 
-		data.titleText.setString("Pause");
-		data.titleText.setFont(data.font);
-		data.titleText.setCharacterSize(48);
-		data.titleText.setFillColor(sf::Color::Red);
+		titleText_.setString("Pause");
+		titleText_.setFont(font_);
+		titleText_.setCharacterSize(48);
+		titleText_.setFillColor(sf::Color::Red);
 
-		data.menu.rootItem.childrenOrientation = Orientation::Vertical;
-		data.menu.rootItem.childrenAlignment = Alignment::Middle;
-		data.menu.rootItem.children.push_back(&data.resumeItem);
-		data.menu.rootItem.children.push_back(&data.exitItem);
-		
-		data.resumeItem.text.setString("Return to game");
-		data.resumeItem.text.setFont(data.font);
-		data.resumeItem.text.setCharacterSize(24);
+		menu_.getRootItem().setChildrenLayout(Orientation::Vertical, Alignment::Middle, 10.f);
+		menu_.getRootItem().addChild(&resumeItem_);
+		menu_.getRootItem().addChild(&exitItem_);
 
-		data.exitItem.text.setString("Exit to main menu");
-		data.exitItem.text.setFont(data.font);
-		data.exitItem.text.setCharacterSize(24);
+		resumeItem_.setText("Return to game", font_, 24);
+		exitItem_.setText("Exit to main menu", font_, 24);
 
-		InitMenuItem(data.menu.rootItem);
-		SelectMenuItem(data.menu, &data.resumeItem);
+		menu_.init();
+		menu_.select(&resumeItem_);
 	}
 
-	void ShutdownGameStatePauseMenu(GameStatePauseMenuData& data, Game& game)
+	void GameStatePauseMenu::Shutdown(Game& game)
 	{
-		// We dont need to free resources here, because they will be freed automatically
 	}
 
-	void HandleGameStatePauseMenuWindowEvent(GameStatePauseMenuData& data, Game& game, const sf::Event& event)
+	void GameStatePauseMenu::HandleWindowEvent(Game& game, sf::Event& event)
 	{
 		if (event.type == sf::Event::KeyPressed)
 		{
 			if (event.key.code == sf::Keyboard::Escape)
 			{
-				PopGameState(game);
+				game.popState();
 			}
 
-			if (data.menu.selectedItem == nullptr)
-			{
+			if (menu_.getSelectedItem() == nullptr)
 				return;
-			}
 
 			if (event.key.code == sf::Keyboard::Enter)
 			{
-				if (data.menu.selectedItem == &data.resumeItem)
+				if (menu_.getSelectedItem() == &resumeItem_)
 				{
-					PopGameState(game);
+					game.popState();
 				}
-				else if (data.menu.selectedItem == &data.exitItem)
+				else if (menu_.getSelectedItem() == &exitItem_)
 				{
-					SwitchGameState(game, GameStateType::MainMenu);
+					game.switchState(GameStateType::MainMenu);
 				}
 			}
 
-			Orientation orientation = data.menu.selectedItem->parent->childrenOrientation;
 			if (event.key.code == sf::Keyboard::Up)
 			{
-				SelectPreviousMenuItem(data.menu);
+				menu_.selectPrevious();
 			}
 			else if (event.key.code == sf::Keyboard::Down)
 			{
-				SelectNextMenuItem(data.menu);
+				menu_.selectNext();
 			}
 		}
 	}
 
-	void UpdateGameStatePauseMenu(GameStatePauseMenuData& data, Game& game, float timeDelta)
+	void GameStatePauseMenu::Update(Game& game, float timeDelta)
 	{
-
 	}
 
-	void DrawGameStatePauseMenu(GameStatePauseMenuData& data, Game& game, sf::RenderWindow& window)
+	void GameStatePauseMenu::Draw(Game& game, sf::RenderWindow& window)
 	{
 		sf::Vector2f viewSize = (sf::Vector2f)window.getView().getSize();
-		
-		data.background.setSize(viewSize);
-		window.draw(data.background);
 
-		data.titleText.setOrigin(GetTextOrigin(data.titleText, { 0.5f, 0.f }));
-		data.titleText.setPosition(viewSize.x / 2.f, 100);
-		window.draw(data.titleText);
+		background_.setSize(viewSize);
+		window.draw(background_);
 
-		DrawMenu(data.menu, window, window.getView().getCenter(), { 0.5f, 0.f });
+		titleText_.setOrigin(GetTextOrigin(titleText_, { 0.5f, 0.f }));
+		titleText_.setPosition(viewSize.x / 2.f, 100);
+		window.draw(titleText_);
+
+		menu_.draw(window, window.getView().getCenter(), { 0.5f, 0.f });
 	}
-
 }

@@ -1,41 +1,32 @@
 #pragma once
-#include "SFML/Graphics.hpp"
-#include "SFML/Audio.hpp"
-#include "Snake.h"
+#include <SFML/Graphics.hpp>
+#include <SFML/Audio.hpp>
+#include "Game.h"
+#include "Platform.h"
+#include "Ball.h"
 
-
-namespace SnakeGame
+namespace ArkanoidGame
 {
-	struct Game;
-
-	struct GameStatePlayingData
+	class GameStatePlaying : public IGameStateData
 	{
-		// Resources
-		sf::Texture appleTexture;
-		sf::Texture rockTexture;
-		sf::Font font;
-		sf::SoundBuffer eatAppleSoundBuffer;
-		sf::SoundBuffer gameOverSoundBuffer;
+	public:
+		void Init(Game& game) override;
+		void Shutdown(Game& game) override;
+		void HandleWindowEvent(Game& game, sf::Event& event) override;
+		void Update(Game& game, float timeDelta) override;
+		void Draw(Game& game, sf::RenderWindow& window) override;
 
-		// Game data
-		Snake snake;
-		sf::Sprite apple;
-		std::vector<sf::Sprite> rocks;
-		int numEatenApples = 0;
+	private:
+		Platform platform_;
+		Ball ball_;
+		int score_ = 0;
 
-		// UI data
-		sf::Text scoreText;
-		sf::Text inputHintText;
-		sf::RectangleShape background;
+		sf::Font font_;
+		sf::Text scoreText_;
+		sf::Text hintText_;
+		sf::RectangleShape background_;
 
-		// Sounds
-		sf::Sound eatAppleSound;
-		sf::Sound gameOverSound;
+		sf::SoundBuffer deathSoundBuffer_;
+		sf::Sound deathSound_;
 	};
-
-	void InitGameStatePlaying(GameStatePlayingData& data, Game& game);
-	void ShutdownGameStatePlaying(GameStatePlayingData& data, Game& game);
-	void HandleGameStatePlayingWindowEvent(GameStatePlayingData& data, Game& game, const sf::Event& event);
-	void UpdateGameStatePlaying(GameStatePlayingData& data, Game& game, float timeDelta);
-	void DrawGameStatePlaying(GameStatePlayingData& data, Game& game, sf::RenderWindow& window);
 }

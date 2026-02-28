@@ -1,24 +1,23 @@
 #pragma once
 #include <SFML/Graphics.hpp>
 #include <vector>
+#include "Game.h"
 
-namespace SnakeGame
+namespace ArkanoidGame
 {
-	struct Game;
-
-	struct GameStateRecordsData
+	class GameStateRecords : public IGameStateData
 	{
-		// Resources
-		sf::Font font;
+	public:
+		void Init(Game& game) override;
+		void Shutdown(Game& game) override;
+		void HandleWindowEvent(Game& game, sf::Event& event) override;
+		void Update(Game& game, float timeDelta) override;
+		void Draw(Game& game, sf::RenderWindow& window) override;
 
-		sf::Text titleText;
-		std::vector<sf::Text> tableTexts;
-		sf::Text hintText;
+	private:
+		sf::Font font_;
+		sf::Text titleText_;
+		std::vector<sf::Text> tableTexts_;
+		sf::Text hintText_;
 	};
-
-	void InitGameStateRecords(GameStateRecordsData& data, Game& game);
-	void ShutdownGameStateRecords(GameStateRecordsData& data, Game& game);
-	void HandleGameStateRecordsWindowEvent(GameStateRecordsData& data, Game& game, const sf::Event& event);
-	void UpdateGameStateRecords(GameStateRecordsData& data, Game& game, float timeDelta);
-	void DrawGameStateRecords(GameStateRecordsData& data, Game& game, sf::RenderWindow& window);
 }

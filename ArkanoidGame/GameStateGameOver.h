@@ -1,28 +1,26 @@
 #pragma once
-#include "SFML/Graphics.hpp"
+#include <SFML/Graphics.hpp>
+#include <vector>
+#include "Game.h"
 
-namespace SnakeGame
+namespace ArkanoidGame
 {
-	struct Game;
-
-	struct GameStateGameOverData
+	class GameStateGameOver : public IGameStateData
 	{
-		// Resources
-		sf::Font font;
+	public:
+		void Init(Game& game) override;
+		void Shutdown(Game& game) override;
+		void HandleWindowEvent(Game& game, sf::Event& event) override;
+		void Update(Game& game, float timeDelta) override;
+		void Draw(Game& game, sf::RenderWindow& window) override;
 
-		float timeSinceGameOver = 0.f;
+	private:
+		sf::Font font_;
+		float timeSinceGameOver_ = 0.f;
 
-		// UI data
-		sf::RectangleShape background;
-		sf::Text gameOverText;
-		sf::Text hintText;
-		std::vector<sf::Text> recordsTableTexts;
+		sf::RectangleShape background_;
+		sf::Text gameOverText_;
+		sf::Text hintText_;
+		std::vector<sf::Text> recordsTableTexts_;
 	};
-
-	// Returns pointer to the allocated data
-	void InitGameStateGameOver(GameStateGameOverData& data, Game& game);
-	void ShutdownGameStateGameOver(GameStateGameOverData& data, Game& game);
-	void HandleGameStateGameOverWindowEvent(GameStateGameOverData& data, Game& game, const sf::Event& event);
-	void UpdateGameStateGameOver(GameStateGameOverData& data, Game& game, float timeDelta);
-	void DrawGameStateGameOver(GameStateGameOverData& data, Game& game, sf::RenderWindow& window);
 }
