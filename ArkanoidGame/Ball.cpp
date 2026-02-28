@@ -1,5 +1,6 @@
 #include "Ball.h"
 #include <cmath>
+#include <algorithm>
 
 namespace ArkanoidGame
 {
@@ -63,6 +64,46 @@ namespace ArkanoidGame
 			shape_.setPosition(shape_.getPosition().x, BALL_RADIUS);
 			velocity_.y = std::fabs(velocity_.y);
 		}
+	}
+
+	int Ball::checkBlockCollisions(std::vector<Block>& blocks)
+	{
+		int destroyed = 0;
+		sf::Vector2f ballPos = shape_.getPosition();
+		sf::FloatRect ballBounds(ballPos.x - BALL_RADIUS, ballPos.y - BALL_RADIUS,
+			BALL_RADIUS * 2.f, BALL_RADIUS * 2.f);
+
+		for (auto& block : blocks)
+		{
+			if (!block.isActive())
+				continue;
+
+			sf::FloatRect blockBounds = block.getBounds();
+			if (!ballBounds.intersects(blockBounds))
+				continue;
+
+			block.destroy();
+			++destroyed;
+
+			// Determine collision axis by finding the smallest overlap
+			float overlapLeft   = (ballPos.x + BALL_RADIUS) - blockBounds.left;
+			float overlapRight  = (blockBounds.left + blockBounds.width) - (ballPos.x - BALL_RADIUS);
+			float overlapTop    = (ballPos.y + BALL_RADIUS) - blockBounds.top;
+			float overlapBottom = (blockBounds.top + blockBounds.height) - (ballPos.y - BALL_RADIUS);
+
+			float minH = std::min(overlapLeft, overlapRight);
+			float minV = std::min(overlapTop, overlapBottom);
+
+			if (minH < minV)
+				velocity_.x = -velocity_.x;
+			else
+				velocity_.y = -velocity_.y;
+
+			// Only handle one block per frame to avoid double-reversals
+			break;
+		}
+
+		return destroyed;
 	}
 
 	bool Ball::bounceOffPlatform(const Platform& platform)

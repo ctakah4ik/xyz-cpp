@@ -1,9 +1,11 @@
 #pragma once
 #include <SFML/Graphics.hpp>
 #include <SFML/Audio.hpp>
+#include <vector>
 #include "Game.h"
 #include "Platform.h"
 #include "Ball.h"
+#include "Block.h"
 
 namespace ArkanoidGame
 {
@@ -19,6 +21,7 @@ namespace ArkanoidGame
 	private:
 		Platform platform_;
 		Ball ball_;
+		std::vector<Block> blocks_;
 		int score_ = 0;
 
 		sf::Font font_;
@@ -28,5 +31,8 @@ namespace ArkanoidGame
 
 		sf::SoundBuffer deathSoundBuffer_;
 		sf::Sound deathSound_;
+
+		void initBlocks();
+		bool allBlocksDestroyed() const;
 	};
 }

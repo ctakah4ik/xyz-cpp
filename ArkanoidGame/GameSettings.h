@@ -24,6 +24,14 @@ namespace ArkanoidGame
 	const float BALL_INITIAL_SPEED_X = 200.f;
 	const float BALL_INITIAL_SPEED_Y = -300.f;
 
+	// Blocks
+	const float BLOCK_WIDTH = 70.f;
+	const float BLOCK_HEIGHT = 25.f;
+	const float BLOCK_PADDING = 5.f;
+	const int BLOCK_COLUMNS = 10;
+	const int BLOCK_ROWS = 4;
+	const float BLOCK_TOP_OFFSET = 60.f;
+
 	// Records
 	const int MAX_RECORDS_TABLE_SIZE = 5;
 	const char* const PLAYER_NAME = "Player";
