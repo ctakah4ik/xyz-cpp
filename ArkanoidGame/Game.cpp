@@ -5,6 +5,7 @@
 #include "GameStatePauseMenu.h"
 #include "GameStateMainMenu.h"
 #include "GameStateRecords.h"
+#include "GameStateWin.h"
 
 namespace ArkanoidGame
 {
@@ -188,6 +189,8 @@ namespace ArkanoidGame
 			return std::make_unique<GameStatePauseMenu>();
 		case GameStateType::Records:
 			return std::make_unique<GameStateRecords>();
+		case GameStateType::Win:
+			return std::make_unique<GameStateWin>();
 		default:
 			assert(false && "Unknown game state type");
 			return nullptr;
