@@ -66,7 +66,7 @@ namespace ArkanoidGame
 		}
 	}
 
-	int Ball::checkBlockCollisions(std::vector<Block>& blocks)
+	int Ball::checkBlockCollisions(std::vector<std::unique_ptr<Block>>& blocks)
 	{
 		int destroyed = 0;
 		sf::Vector2f ballPos = shape_.getPosition();
@@ -75,15 +75,16 @@ namespace ArkanoidGame
 
 		for (auto& block : blocks)
 		{
-			if (!block.isActive())
+			if (!block->isActive())
 				continue;
 
-			sf::FloatRect blockBounds = block.getBounds();
+			sf::FloatRect blockBounds = block->getBounds();
 			if (!ballBounds.intersects(blockBounds))
 				continue;
 
-			block.destroy();
-			++destroyed;
+			bool wasDestroyed = block->hit();
+			if (wasDestroyed)
+				++destroyed;
 
 			// Determine collision axis by finding the smallest overlap
 			float overlapLeft   = (ballPos.x + BALL_RADIUS) - blockBounds.left;

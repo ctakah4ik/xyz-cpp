@@ -32,6 +32,11 @@ namespace ArkanoidGame
 	const int BLOCK_ROWS = 4;
 	const float BLOCK_TOP_OFFSET = 60.f;
 
+	// Special blocks
+	const int MAX_UNBREAKABLE_BLOCKS = 3;
+	const int MAX_DURABLE_BLOCKS = 5;
+	const int MULTIHIT_BLOCK_HP = 3;
+
 	// Records
 	const int MAX_RECORDS_TABLE_SIZE = 5;
 	const char* const PLAYER_NAME = "Player";

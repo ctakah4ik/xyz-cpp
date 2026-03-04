@@ -2,6 +2,7 @@
 #include <SFML/Graphics.hpp>
 #include <SFML/Audio.hpp>
 #include <vector>
+#include <memory>
 #include "Game.h"
 #include "Platform.h"
 #include "Ball.h"
@@ -21,7 +22,7 @@ namespace ArkanoidGame
 	private:
 		Platform platform_;
 		Ball ball_;
-		std::vector<Block> blocks_;
+		std::vector<std::unique_ptr<Block>> blocks_;
 		int score_ = 0;
 
 		sf::Font font_;

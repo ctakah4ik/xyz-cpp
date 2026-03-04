@@ -1,6 +1,8 @@
 #include "GameStatePlaying.h"
 #include "Text.h"
 #include <cassert>
+#include <cstdlib>
+#include <ctime>
 
 namespace ArkanoidGame
 {
@@ -44,7 +46,37 @@ namespace ArkanoidGame
 		const float startX = (SCREEN_WIDTH - totalRowWidth) / 2.f;
 		const float startY = BLOCK_TOP_OFFSET;
 
+		const int totalBlocks = BLOCK_ROWS * BLOCK_COLUMNS;
+
+		std::srand(static_cast<unsigned>(std::time(nullptr)));
+
+		// 0 = normal, 1 = unbreakable, 2 = durable
+		std::vector<int> specialTypes(totalBlocks, 0);
+		int unbreakableCount = 0;
+		int durableCount = 0;
+
+		while (unbreakableCount < MAX_UNBREAKABLE_BLOCKS)
+		{
+			int idx = std::rand() % totalBlocks;
+			if (specialTypes[idx] == 0)
+			{
+				specialTypes[idx] = 1;
+				++unbreakableCount;
+			}
+		}
+
+		while (durableCount < MAX_DURABLE_BLOCKS)
+		{
+			int idx = std::rand() % totalBlocks;
+			if (specialTypes[idx] == 0)
+			{
+				specialTypes[idx] = 2;
+				++durableCount;
+			}
+		}
+
 		blocks_.clear();
+		int index = 0;
 		for (int row = 0; row < BLOCK_ROWS; ++row)
 		{
 			sf::Color color = rowColors[row % 4];
@@ -52,9 +84,18 @@ namespace ArkanoidGame
 			{
 				float x = startX + col * (BLOCK_WIDTH + BLOCK_PADDING);
 				float y = startY + row * (BLOCK_HEIGHT + BLOCK_PADDING);
-				Block block;
-				block.init(x, y, color);
+
+				std::unique_ptr<Block> block;
+				if (specialTypes[index] == 1)
+					block = std::make_unique<UnbreakableBlock>();
+				else if (specialTypes[index] == 2)
+					block = std::make_unique<DurableBlock>();
+				else
+					block = std::make_unique<Block>();
+
+				block->init(x, y, color);
 				blocks_.push_back(std::move(block));
+				++index;
 			}
 		}
 	}
@@ -62,7 +103,7 @@ namespace ArkanoidGame
 	bool GameStatePlaying::allBlocksDestroyed() const
 	{
 		for (const auto& block : blocks_)
-			if (block.isActive())
+			if (block->isActive() && !block->isUnbreakable())
 				return false;
 		return true;
 	}
@@ -114,8 +155,8 @@ namespace ArkanoidGame
 	{
 		window.draw(background_);
 
-		for (auto& block : blocks_)
-			block.draw(window);
+		for (const auto& block : blocks_)
+			block->draw(window);
 
 		platform_.draw(window);
 		ball_.draw(window);
