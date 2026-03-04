@@ -2,6 +2,8 @@
 
 namespace ArkanoidGame
 {
+	// --- Block ---
+
 	void Block::init(float x, float y, sf::Color color)
 	{
 		shape_.setSize(sf::Vector2f(BLOCK_WIDTH, BLOCK_HEIGHT));
@@ -28,8 +30,79 @@ namespace ArkanoidGame
 		return active_;
 	}
 
-	void Block::destroy()
+	bool Block::isUnbreakable() const
+	{
+		return false;
+	}
+
+	bool Block::hit()
 	{
 		active_ = false;
+		return true;
+	}
+
+	// --- UnbreakableBlock ---
+
+	void UnbreakableBlock::init(float x, float y, sf::Color)
+	{
+		shape_.setSize(sf::Vector2f(BLOCK_WIDTH, BLOCK_HEIGHT));
+		shape_.setPosition(x, y);
+		shape_.setFillColor(sf::Color(120, 120, 120));
+		shape_.setOutlineColor(sf::Color(200, 200, 200));
+		shape_.setOutlineThickness(2.f);
+		active_ = true;
+	}
+
+	bool UnbreakableBlock::isUnbreakable() const
+	{
+		return true;
+	}
+
+	bool UnbreakableBlock::hit()
+	{
+		return false;
+	}
+
+	// --- DurableBlock ---
+
+	void DurableBlock::init(float x, float y, sf::Color)
+	{
+		shape_.setSize(sf::Vector2f(BLOCK_WIDTH, BLOCK_HEIGHT));
+		shape_.setPosition(x, y);
+		shape_.setOutlineThickness(1.f);
+		active_ = true;
+		hitPoints_ = MULTIHIT_BLOCK_HP;
+		updateAppearance();
+	}
+
+	bool DurableBlock::hit()
+	{
+		--hitPoints_;
+		if (hitPoints_ <= 0)
+		{
+			active_ = false;
+			return true;
+		}
+		updateAppearance();
+		return false;
+	}
+
+	void DurableBlock::updateAppearance()
+	{
+		if (hitPoints_ >= 3)
+		{
+			shape_.setFillColor(sf::Color(180, 50, 180));   // Purple - full health
+			shape_.setOutlineColor(sf::Color(220, 100, 220));
+		}
+		else if (hitPoints_ == 2)
+		{
+			shape_.setFillColor(sf::Color(180, 120, 50));   // Orange - damaged
+			shape_.setOutlineColor(sf::Color(220, 160, 80));
+		}
+		else
+		{
+			shape_.setFillColor(sf::Color(200, 60, 60));    // Red - almost broken
+			shape_.setOutlineColor(sf::Color(255, 100, 100));
+		}
 	}
 }
