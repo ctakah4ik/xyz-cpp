@@ -6,6 +6,7 @@ namespace ArkanoidGame
 {
 	Ball::Ball()
 		: velocity_(BALL_INITIAL_SPEED_X, BALL_INITIAL_SPEED_Y)
+		, baseVelocity_(BALL_INITIAL_SPEED_X, BALL_INITIAL_SPEED_Y)
 	{
 	}
 
@@ -17,6 +18,8 @@ namespace ArkanoidGame
 		// Start above platform, center of screen
 		shape_.setPosition(SCREEN_WIDTH / 2.f, (float)SCREEN_HEIGHT - PLATFORM_Y_OFFSET - PLATFORM_HEIGHT - BALL_RADIUS * 2.f);
 		velocity_ = sf::Vector2f(BALL_INITIAL_SPEED_X, BALL_INITIAL_SPEED_Y);
+		baseVelocity_ = velocity_;
+		fireball_ = false;
 	}
 
 	bool Ball::update(float timeDelta, const Platform& platform)
@@ -36,6 +39,36 @@ namespace ArkanoidGame
 	bool Ball::isOutOfBounds() const
 	{
 		return shape_.getPosition().y - BALL_RADIUS > (float)SCREEN_HEIGHT;
+	}
+
+	void Ball::setFireball(bool enabled)
+	{
+		if (enabled && !fireball_)
+		{
+			fireball_ = true;
+			baseVelocity_ = velocity_;
+			velocity_.x *= FIREBALL_SPEED_MULTIPLIER;
+			velocity_.y *= FIREBALL_SPEED_MULTIPLIER;
+			shape_.setFillColor(sf::Color(255, 140, 0)); // Orange
+		}
+		else if (!enabled && fireball_)
+		{
+			fireball_ = false;
+			// Restore direction but with base speed magnitude
+			float currentSpeed = std::sqrt(velocity_.x * velocity_.x + velocity_.y * velocity_.y);
+			float baseSpeed = std::sqrt(baseVelocity_.x * baseVelocity_.x + baseVelocity_.y * baseVelocity_.y);
+			if (currentSpeed > 0.f)
+			{
+				velocity_.x = (velocity_.x / currentSpeed) * baseSpeed;
+				velocity_.y = (velocity_.y / currentSpeed) * baseSpeed;
+			}
+			shape_.setFillColor(sf::Color::White);
+		}
+	}
+
+	bool Ball::isFireball() const
+	{
+		return fireball_;
 	}
 
 	void Ball::bounceOffWalls()
@@ -66,9 +99,10 @@ namespace ArkanoidGame
 		}
 	}
 
-	int Ball::checkBlockCollisions(std::vector<std::unique_ptr<Block>>& blocks)
+	int Ball::checkBlockCollisions(std::vector<std::unique_ptr<Block>>& blocks,
+		std::vector<sf::Vector2f>& destroyedPositions)
 	{
-		int destroyed = 0;
+		int totalScore = 0;
 		sf::Vector2f ballPos = shape_.getPosition();
 		sf::FloatRect ballBounds(ballPos.x - BALL_RADIUS, ballPos.y - BALL_RADIUS,
 			BALL_RADIUS * 2.f, BALL_RADIUS * 2.f);
@@ -82,29 +116,40 @@ namespace ArkanoidGame
 			if (!ballBounds.intersects(blockBounds))
 				continue;
 
+			// Remember position before hit (block may become inactive)
+			float cx = blockBounds.left + blockBounds.width / 2.f;
+			float cy = blockBounds.top + blockBounds.height / 2.f;
+
 			bool wasDestroyed = block->hit();
 			if (wasDestroyed)
-				++destroyed;
+			{
+				totalScore += block->getScoreValue();
+				destroyedPositions.push_back({ cx, cy });
+			}
 
-			// Determine collision axis by finding the smallest overlap
-			float overlapLeft   = (ballPos.x + BALL_RADIUS) - blockBounds.left;
-			float overlapRight  = (blockBounds.left + blockBounds.width) - (ballPos.x - BALL_RADIUS);
-			float overlapTop    = (ballPos.y + BALL_RADIUS) - blockBounds.top;
-			float overlapBottom = (blockBounds.top + blockBounds.height) - (ballPos.y - BALL_RADIUS);
+			if (!fireball_)
+			{
+				// Determine collision axis by finding the smallest overlap
+				float overlapLeft   = (ballPos.x + BALL_RADIUS) - blockBounds.left;
+				float overlapRight  = (blockBounds.left + blockBounds.width) - (ballPos.x - BALL_RADIUS);
+				float overlapTop    = (ballPos.y + BALL_RADIUS) - blockBounds.top;
+				float overlapBottom = (blockBounds.top + blockBounds.height) - (ballPos.y - BALL_RADIUS);
 
-			float minH = std::min(overlapLeft, overlapRight);
-			float minV = std::min(overlapTop, overlapBottom);
+				float minH = std::min(overlapLeft, overlapRight);
+				float minV = std::min(overlapTop, overlapBottom);
 
-			if (minH < minV)
-				velocity_.x = -velocity_.x;
-			else
-				velocity_.y = -velocity_.y;
+				if (minH < minV)
+					velocity_.x = -velocity_.x;
+				else
+					velocity_.y = -velocity_.y;
 
-			// Only handle one block per frame to avoid double-reversals
-			break;
+				// Only handle one block per frame to avoid double-reversals
+				break;
+			}
+			// Fireball: don't bounce, continue to next block (pierce through)
 		}
 
-		return destroyed;
+		return totalScore;
 	}
 
 	bool Ball::bounceOffPlatform(const Platform& platform)

@@ -14,8 +14,13 @@ namespace ArkanoidGame
 		void draw(sf::RenderWindow& window) const;
 		sf::FloatRect getBounds() const;
 
+		// Strategy pattern: width multiplier for bonus
+		void setWidthMultiplier(float multiplier);
+		void resetWidth();
+
 	private:
 		sf::RectangleShape shape_;
 		float speed_;
+		float currentWidth_ = PLATFORM_WIDTH;
 	};
 }

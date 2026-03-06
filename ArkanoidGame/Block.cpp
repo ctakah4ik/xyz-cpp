@@ -4,6 +4,11 @@ namespace ArkanoidGame
 {
 	// --- Block ---
 
+	Block::Block()
+		: scoreStrategy_(std::make_unique<NormalBlockScore>())
+	{
+	}
+
 	void Block::init(float x, float y, sf::Color color)
 	{
 		shape_.setSize(sf::Vector2f(BLOCK_WIDTH, BLOCK_HEIGHT));
@@ -12,6 +17,7 @@ namespace ArkanoidGame
 		shape_.setOutlineColor(sf::Color(0, 0, 0, 120));
 		shape_.setOutlineThickness(1.f);
 		active_ = true;
+		fragile_ = false;
 	}
 
 	void Block::draw(sf::RenderWindow& window) const
@@ -41,7 +47,47 @@ namespace ArkanoidGame
 		return true;
 	}
 
+	int Block::getScoreValue() const
+	{
+		return scoreStrategy_->calculateScore();
+	}
+
+	void Block::setFragile(bool fragile)
+	{
+		fragile_ = fragile;
+		if (fragile)
+		{
+			shape_.setOutlineColor(sf::Color(255, 80, 80));
+			shape_.setOutlineThickness(2.f);
+		}
+		else
+		{
+			shape_.setOutlineColor(sf::Color(0, 0, 0, 120));
+			shape_.setOutlineThickness(1.f);
+		}
+	}
+
+	bool Block::isFragile() const
+	{
+		return fragile_;
+	}
+
+	BlockState Block::saveState() const
+	{
+		return { active_, 0 };
+	}
+
+	void Block::restoreState(const BlockState& state)
+	{
+		active_ = state.active;
+	}
+
 	// --- UnbreakableBlock ---
+
+	UnbreakableBlock::UnbreakableBlock()
+	{
+		scoreStrategy_ = std::make_unique<UnbreakableBlockScore>();
+	}
 
 	void UnbreakableBlock::init(float x, float y, sf::Color)
 	{
@@ -60,10 +106,20 @@ namespace ArkanoidGame
 
 	bool UnbreakableBlock::hit()
 	{
+		if (fragile_)
+		{
+			active_ = false;
+			return true;
+		}
 		return false;
 	}
 
 	// --- DurableBlock ---
+
+	DurableBlock::DurableBlock()
+	{
+		scoreStrategy_ = std::make_unique<DurableBlockScore>();
+	}
 
 	void DurableBlock::init(float x, float y, sf::Color)
 	{
@@ -77,6 +133,12 @@ namespace ArkanoidGame
 
 	bool DurableBlock::hit()
 	{
+		if (fragile_)
+		{
+			active_ = false;
+			return true;
+		}
+
 		--hitPoints_;
 		if (hitPoints_ <= 0)
 		{
@@ -85,6 +147,19 @@ namespace ArkanoidGame
 		}
 		updateAppearance();
 		return false;
+	}
+
+	BlockState DurableBlock::saveState() const
+	{
+		return { active_, hitPoints_ };
+	}
+
+	void DurableBlock::restoreState(const BlockState& state)
+	{
+		active_ = state.active;
+		hitPoints_ = state.hitPoints;
+		if (active_)
+			updateAppearance();
 	}
 
 	void DurableBlock::updateAppearance()

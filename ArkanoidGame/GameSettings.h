@@ -37,6 +37,31 @@ namespace ArkanoidGame
 	const int MAX_DURABLE_BLOCKS = 5;
 	const int MULTIHIT_BLOCK_HP = 3;
 
+	// Score values per block type (Strategy pattern)
+	const int NORMAL_BLOCK_SCORE = 10;
+	const int DURABLE_BLOCK_SCORE = 30;
+	const int PLATFORM_BOUNCE_SCORE = 1;
+
+	// Lives (Memento pattern)
+	const int INITIAL_LIVES = 3;
+
+	// Bonuses
+	const float BONUS_DROP_CHANCE = 0.1f;       // 10%
+	const float BONUS_FALL_SPEED = 150.f;
+	const float BONUS_WIDTH = 30.f;
+	const float BONUS_HEIGHT = 15.f;
+
+	// Fireball bonus (Decorator pattern)
+	const float FIREBALL_DURATION = 7.f;
+	const float FIREBALL_SPEED_MULTIPLIER = 1.5f;
+
+	// Fragile blocks bonus (State pattern)
+	const float FRAGILE_DURATION = 5.f;
+
+	// Wide platform bonus (Strategy pattern)
+	const float WIDE_PLATFORM_DURATION = 8.f;
+	const float WIDE_PLATFORM_MULTIPLIER = 2.f;
+
 	// Records
 	const int MAX_RECORDS_TABLE_SIZE = 5;
 	const char* const PLAYER_NAME = "Player";
