@@ -3,6 +3,7 @@
 #include <cassert>
 #include <cstdlib>
 #include <ctime>
+#include <algorithm>
 
 namespace ArkanoidGame
 {
@@ -19,12 +20,23 @@ namespace ArkanoidGame
 		platform_.init();
 		ball_.init();
 		score_ = 0;
+		lives_ = INITIAL_LIVES;
+
+		fallingBonuses_.clear();
+		activeEffects_.clear();
 
 		initBlocks();
+
+		// Memento: save initial state
+		memento_ = createMemento();
 
 		scoreText_.setFont(font_);
 		scoreText_.setCharacterSize(24);
 		scoreText_.setFillColor(sf::Color::Yellow);
+
+		livesText_.setFont(font_);
+		livesText_.setCharacterSize(24);
+		livesText_.setFillColor(sf::Color::Cyan);
 
 		hintText_.setFont(font_);
 		hintText_.setCharacterSize(24);
@@ -129,10 +141,25 @@ namespace ArkanoidGame
 
 		bool bouncedPlatform = ball_.update(timeDelta, platform_);
 		if (bouncedPlatform)
-			score_++;
+			score_ += PLATFORM_BOUNCE_SCORE;
 
-		int destroyed = ball_.checkBlockCollisions(blocks_);
-		score_ += destroyed * 10;
+		// Score from block collisions (Strategy pattern: each block returns its own score)
+		std::vector<sf::Vector2f> destroyedPositions;
+		int blockScore = ball_.checkBlockCollisions(blocks_, destroyedPositions);
+		if (blockScore > 0)
+		{
+			score_ += blockScore;
+
+			// Spawn bonuses from destroyed blocks (10% chance per block)
+			for (const auto& pos : destroyedPositions)
+				spawnBonus(pos.x, pos.y);
+		}
+
+		// Update falling bonuses
+		updateBonuses(timeDelta);
+
+		// Update active effects timers
+		updateEffects(timeDelta);
 
 		if (allBlocksDestroyed())
 		{
@@ -143,12 +170,30 @@ namespace ArkanoidGame
 
 		if (ball_.isOutOfBounds())
 		{
-			deathSound_.play();
-			game.getRecordsTable()[PLAYER_NAME] = std::max(game.getRecordsTable()[PLAYER_NAME], score_);
-			game.pushState(GameStateType::GameOver, false);
+			// Remove all active effects
+			for (auto& effect : activeEffects_)
+				removeEffect(effect.type);
+			activeEffects_.clear();
+			fallingBonuses_.clear();
+
+			--lives_;
+			if (lives_ <= 0)
+			{
+				deathSound_.play();
+				game.getRecordsTable()[PLAYER_NAME] = std::max(game.getRecordsTable()[PLAYER_NAME], score_);
+				game.pushState(GameStateType::GameOver, false);
+			}
+			else
+			{
+				deathSound_.play();
+				// Memento: save current state before resetting
+				memento_ = createMemento();
+				resetBallAndPlatform();
+			}
 		}
 
 		scoreText_.setString("Score: " + std::to_string(score_));
+		livesText_.setString("Lives: " + std::to_string(lives_));
 	}
 
 	void GameStatePlaying::Draw(Game& game, sf::RenderWindow& window)
@@ -158,6 +203,10 @@ namespace ArkanoidGame
 		for (const auto& block : blocks_)
 			block->draw(window);
 
+		// Draw falling bonuses
+		for (const auto& bonus : fallingBonuses_)
+			bonus->draw(window);
+
 		platform_.draw(window);
 		ball_.draw(window);
 
@@ -165,8 +214,178 @@ namespace ArkanoidGame
 		scoreText_.setPosition(10.f, 10.f);
 		window.draw(scoreText_);
 
+		livesText_.setOrigin(GetTextOrigin(livesText_, { 0.f, 0.f }));
+		livesText_.setPosition(180.f, 10.f);
+		window.draw(livesText_);
+
 		sf::Vector2f viewSize = window.getView().getSize();
 		hintText_.setPosition(viewSize.x - 10.f, 10.f);
 		window.draw(hintText_);
+	}
+
+	// Memento pattern: create snapshot
+	GameMemento GameStatePlaying::createMemento() const
+	{
+		std::vector<BlockState> blockStates;
+		blockStates.reserve(blocks_.size());
+		for (const auto& block : blocks_)
+			blockStates.push_back(block->saveState());
+
+		return GameMemento(score_, blockStates);
+	}
+
+	// Memento pattern: restore from snapshot
+	void GameStatePlaying::restoreFromMemento(const GameMemento& memento)
+	{
+		score_ = memento.getScore();
+		const auto& blockStates = memento.getBlockStates();
+		for (size_t i = 0; i < blocks_.size() && i < blockStates.size(); ++i)
+			blocks_[i]->restoreState(blockStates[i]);
+	}
+
+	void GameStatePlaying::resetBallAndPlatform()
+	{
+		ball_.init();
+		platform_.init();
+	}
+
+	void GameStatePlaying::spawnBonus(float x, float y)
+	{
+		// 10% chance to spawn a bonus
+		if ((std::rand() % 100) >= static_cast<int>(BONUS_DROP_CHANCE * 100))
+			return;
+
+		float cx = x;
+		float cy = y;
+
+		// Random bonus type
+		int type = std::rand() % 3;
+		std::unique_ptr<Bonus> bonus;
+		switch (type)
+		{
+		case 0:
+			bonus = std::make_unique<FireballBonus>(cx, cy);
+			break;
+		case 1:
+			bonus = std::make_unique<FragileBlocksBonus>(cx, cy);
+			break;
+		case 2:
+			bonus = std::make_unique<WidePlatformBonus>(cx, cy);
+			break;
+		}
+
+		fallingBonuses_.push_back(std::move(bonus));
+	}
+
+	void GameStatePlaying::updateBonuses(float timeDelta)
+	{
+		sf::FloatRect platformBounds = platform_.getBounds();
+
+		for (auto& bonus : fallingBonuses_)
+		{
+			if (!bonus->isActive())
+				continue;
+
+			bonus->update(timeDelta);
+
+			// Check if bonus is collected by platform
+			sf::FloatRect bonusBounds = bonus->getBounds();
+			if (bonusBounds.intersects(platformBounds))
+			{
+				bonus->deactivate();
+				applyEffect(bonus->getType(), bonus->getDuration());
+			}
+			// Remove if out of screen
+			else if (bonus->isOutOfBounds())
+			{
+				bonus->deactivate();
+			}
+		}
+
+		// Remove inactive bonuses
+		fallingBonuses_.erase(
+			std::remove_if(fallingBonuses_.begin(), fallingBonuses_.end(),
+				[](const std::unique_ptr<Bonus>& b) { return !b->isActive(); }),
+			fallingBonuses_.end());
+	}
+
+	void GameStatePlaying::updateEffects(float timeDelta)
+	{
+		for (auto it = activeEffects_.begin(); it != activeEffects_.end();)
+		{
+			it->remainingTime -= timeDelta;
+			if (it->remainingTime <= 0.f)
+			{
+				removeEffect(it->type);
+				it = activeEffects_.erase(it);
+			}
+			else
+			{
+				++it;
+			}
+		}
+	}
+
+	void GameStatePlaying::applyEffect(BonusType type, float duration)
+	{
+		// If effect already active, refresh timer
+		for (auto& effect : activeEffects_)
+		{
+			if (effect.type == type)
+			{
+				effect.remainingTime = duration;
+				return;
+			}
+		}
+
+		// Apply new effect
+		activeEffects_.push_back({ type, duration });
+
+		switch (type)
+		{
+		case BonusType::Fireball:
+			// Decorator: decorate ball with fireball behavior
+			ball_.setFireball(true);
+			break;
+		case BonusType::FragileBlocks:
+			// State: switch all blocks to fragile state
+			for (auto& block : blocks_)
+				if (block->isActive())
+					block->setFragile(true);
+			break;
+		case BonusType::WidePlatform:
+			// Strategy: change platform size strategy
+			platform_.setWidthMultiplier(WIDE_PLATFORM_MULTIPLIER);
+			break;
+		}
+	}
+
+	void GameStatePlaying::removeEffect(BonusType type)
+	{
+		switch (type)
+		{
+		case BonusType::Fireball:
+			// Remove decorator
+			ball_.setFireball(false);
+			break;
+		case BonusType::FragileBlocks:
+			// Restore blocks to normal state
+			for (auto& block : blocks_)
+				if (block->isActive())
+					block->setFragile(false);
+			break;
+		case BonusType::WidePlatform:
+			// Restore platform size strategy
+			platform_.resetWidth();
+			break;
+		}
+	}
+
+	bool GameStatePlaying::hasEffect(BonusType type) const
+	{
+		for (const auto& effect : activeEffects_)
+			if (effect.type == type)
+				return true;
+		return false;
 	}
 }
